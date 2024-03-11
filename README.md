@@ -1,16 +1,20 @@
-## Uruchomienie projektu
-
-### 1. Instalacja Poetry
-
+1. Create venv
 ```bash
-pip install poetry
+python -m venv .venv
 ```
-
+2. Activate venv
 ```bash
-cd Projekt_analiza
-poetry install
+.venv/Scripts/activate
 ```
-### 2. Uruchomienie środowiska wirtualnego 
+3a. If NVIDIIA GPU:
 ```bash
-poetry shell
+pip3 install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu118
+```
+3b. If not
+```bash
+pip install torch torchvision torchaudio
+```
+4. Download requirements
+```bash
+pip install -r "requirements.txt"
 ```
