@@ -66,33 +66,35 @@ def detect_from_video(video_path, model):
 
             results = model.track(frame, persist=True, conf=0.7)
             for result in results:
+                if result.boxes is None or result.boxes.id is None:
+                    continue
+                else:
+                    boxes = result.boxes.cpu().numpy()
+                    ids = result.boxes.id.cpu().numpy().astype(int)
+                    for box, id in zip(boxes, ids):
+                        class_id = int(box.cls[0])  # klasa boxa
 
-                boxes = result.boxes.cpu().numpy()
-                ids = result.boxes.id.cpu().numpy().astype(int)
-                for box, id in zip(boxes, ids):
-                    class_id = int(box.cls[0])  # klasa boxa
+                        if class_id == 0:  # head
+                            r = box.xyxy[0].astype(int)  #
+                            class_name = model.names[class_id]  #
+                            confidence = box[0].conf.astype(float)
+                            cv2.rectangle(frame, r[:2], r[2:], (0, 255, 0), 2)  # rysowanie na obrazie boxa
+                            cv2.putText(frame, f'Name: {id}', (r[0] + 50, r[1] - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5,
+                                        (255, 0, 0), 1)
+                            cv2.putText(frame, f'{confidence}', (r[0] + 10, r[1] + 50), cv2.FONT_HERSHEY_SIMPLEX, 0.5,
+                                        (255, 0, 0), 2)
 
-                    if class_id == 0:  # head
-                        r = box.xyxy[0].astype(int)  #
-                        class_name = model.names[class_id]  #
-                        confidence = box[0].conf.astype(float)
-                        cv2.rectangle(frame, r[:2], r[2:], (0, 255, 0), 2)  # rysowanie na obrazie boxa
-                        cv2.putText(frame, f'Name: {id}', (r[0] + 50, r[1] - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5,
-                                    (255, 0, 0), 1)
-                        cv2.putText(frame, f'{confidence}', (r[0] + 10, r[1] + 50), cv2.FONT_HERSHEY_SIMPLEX, 0.5,
-                                    (255, 0, 0), 2)
-
-                    if class_id == 2:  # person
-                        r = box.xyxy[0].astype(int)
-                        #draw_lines(r, id, frame)  # rysowanie lini
-                        class_name = model.names[class_id]
-                        cv2.rectangle(frame, r[:2], r[2:], D, 2)  # rysowanie na obrazie boxa
-                        cv2.putText(frame, f'Name: {id}', (r[0], r[1] - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0),
-                                    2)
-                       # cv2.imshow(f"Person {id}", frame[r[1]:r[3], r[0]:r[2]]) #to wyswietla boxy
-                       # cv2.imwrite("D:/pyprojekt/UIv1/facesOutput/shop2/" + str(id) + ".jpg", frame[r[1]:r[3], r[0]:r[2]])
-            resized_frame = cv2.resize(frame, (1140, 740))
-            cv2.imshow("act", resized_frame)
+                        if class_id == 2:  # person
+                            r = box.xyxy[0].astype(int)
+                            draw_lines(r, id, frame)  # rysowanie lini
+                            class_name = model.names[class_id]
+                            cv2.rectangle(frame, r[:2], r[2:], color_dict[id], 2)  # rysowanie na obrazie boxa
+                            cv2.putText(frame, f'Name: {id}', (r[0], r[1] - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0),
+                                        2)
+                           # cv2.imshow(f"Person {id}", frame[r[1]:r[3], r[0]:r[2]]) #to wyswietla boxy
+                           # cv2.imwrite("D:/pyprojekt/UIv1/facesOutput/shop2/" + str(id) + ".jpg", frame[r[1]:r[3], r[0]:r[2]])
+                resized_frame = cv2.resize(frame, (1140, 740))
+                cv2.imshow("act", resized_frame)
 
             if cv2.waitKey(25) & 0xFF == ord('q'):
                 break
