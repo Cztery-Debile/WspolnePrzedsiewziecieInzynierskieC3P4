@@ -7,7 +7,7 @@ pip install poetry
 ```
 
 ```bash
-cd projekt-analiza
+cd Projekt_analiza
 poetry install
 ```
 ### 2. Uruchomienie środowiska wirtualnego 
