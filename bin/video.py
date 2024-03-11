@@ -64,10 +64,11 @@ def detect_from_video(video_path, model):
             # detect objects
             # track objects
 
-            results = model.track(frame, persist=True, conf=0.7)
+            results = model.track(frame, persist=True, conf=0.5)
             for result in results:
                 if result.boxes is None or result.boxes.id is None:
-                    continue
+                    resized_frame = cv2.resize(frame, (1140, 740))
+                    cv2.imshow("act", resized_frame)
                 else:
                     boxes = result.boxes.cpu().numpy()
                     ids = result.boxes.id.cpu().numpy().astype(int)
