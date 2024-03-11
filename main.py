@@ -7,7 +7,6 @@ import cv2
 import numpy as np
 from PIL import Image, ImageTk, ImageDraw
 
-from bin.detect_on_photo import detect_on_photo
 def change_active_button(self,selection):
     if selection == 'rectangle':
         self.draw_polyline_button.configure(fg_color="#1F6AA5",hover_color="#144870")
@@ -30,7 +29,7 @@ customtkinter.set_default_color_theme("blue")  # Themes: "blue" (standard), "gre
 width = 1280
 height = 720
 title="NazwaRobocza™"
-model_path = "../modelss/other/re_trained/best_today.pt"
+model_path = "models/best_today.pt"
 
 class App(customtkinter.CTk):
     drawing_with_rectangle = False
@@ -152,10 +151,10 @@ class App(customtkinter.CTk):
                                                          font=customtkinter.CTkFont(size=20, weight="bold"))
 
         self.draw_rectangle_button = customtkinter.CTkButton(self.drawing_method_frame, image=customtkinter.CTkImage(
-            dark_image=Image.open("../sprites/draw_rectangle.png")),text="Prostokąt",
+            dark_image=Image.open("sprites/draw_rectangle.png")),text="Prostokąt",
                                                              width=15,command=self.select_with_rectangle)
         self.draw_polyline_button = customtkinter.CTkButton(self.drawing_method_frame, image=customtkinter.CTkImage(
-            dark_image=Image.open("../sprites/draw_freely.png")),text="Dowolne",width=15,
+            dark_image=Image.open("sprites/draw_freely.png")),text="Dowolne",width=15,
                                                              command=self.select_with_polyline)
         self.analyze_button = customtkinter.CTkButton(self.drawing_method_frame, text="Analizuj zaznaczony obszar",
                                                       state="disabled",
@@ -182,17 +181,17 @@ class App(customtkinter.CTk):
                                                           font=customtkinter.CTkFont(size=20, weight="bold"))
         self.from_photo_button = customtkinter.CTkButton(self.analysis_source_frame,text="Zdjęcie",width=20,
                                                          image=customtkinter.CTkImage(
-                                                             dark_image=Image.open("../sprites/from_picture.png"))
+                                                             dark_image=Image.open("sprites/from_picture.png"))
                                                            ,command=self.load_photo)
 
         self.from_video_button = customtkinter.CTkButton(self.analysis_source_frame, text="Wideo",width=20,
                                                          image=customtkinter.CTkImage(
-                                                             dark_image=Image.open("../sprites/from_video.png"))
+                                                             dark_image=Image.open("sprites/from_video.png"))
                                                                 ,command=lambda:video_button_handler(""))
 
         self.from_camera_button = customtkinter.CTkButton(self.analysis_source_frame, text="Kamera",width=20,
                                                           image=customtkinter.CTkImage(
-                                                              dark_image=Image.open("../sprites/from_camera.png"))
+                                                              dark_image=Image.open("sprites/from_camera.png"))
                                                                 ,command=lambda:video_button_handler("camera"))
 
         self.analysis_source_label.grid(row=0, column=0, pady=10, columnspan=2)

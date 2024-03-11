@@ -84,9 +84,9 @@ def detect_from_video(video_path, model):
 
                     if class_id == 2:  # person
                         r = box.xyxy[0].astype(int)
-                        draw_lines(r, id, frame)  # rysowanie lini
+                        #draw_lines(r, id, frame)  # rysowanie lini
                         class_name = model.names[class_id]
-                        cv2.rectangle(frame, r[:2], r[2:], color_dict[id], 2)  # rysowanie na obrazie boxa
+                        cv2.rectangle(frame, r[:2], r[2:], D, 2)  # rysowanie na obrazie boxa
                         cv2.putText(frame, f'Name: {id}', (r[0], r[1] - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0),
                                     2)
                        # cv2.imshow(f"Person {id}", frame[r[1]:r[3], r[0]:r[2]]) #to wyswietla boxy

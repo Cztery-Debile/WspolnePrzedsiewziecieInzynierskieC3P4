@@ -18,3 +18,7 @@ pip install torch torchvision torchaudio
 ```bash
 pip install -r "requirements.txt"
 ```
+5. Install the rest of packages
+```bash
+pip install opencv-python customtkinter ultralytics
+```
