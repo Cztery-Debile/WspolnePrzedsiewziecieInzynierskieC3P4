@@ -10,6 +10,7 @@ model_yolo = YOLO('../models/best_today.pt')
 detection_keypoint = DetectKeypoint()
 classification_keypoint = KeypointClassification('czynnosci_model.pt')
 
+
 center_dict = defaultdict(list)
 object_id_list = []
 color_dict = {}
@@ -25,16 +26,17 @@ def random_color():
     return tuple(int(random.random() * 255) for _ in range(3))
 
 frame_count = 0
-classifications_dict = {}  # Słownik do przechowywania klasyfikacji dla każdej osoby
-persisted_classifications = {}  # Słownik do przechowywania ostatniej klasyfikacji wyświetlanej co 10 klatek
+classifications_dict = {}
+persisted_classifications = {}
+skip_frames = 10
 
 # read frames
 while ret:
     ret, frame = cap.read()
     if ret:
         frame_count += 1
-        # detect objects
-        # track objects
+
+        # Analiza tylko co 5 klatek
 
         results = model_yolo.track(frame, persist=True)
         for result in results:
@@ -44,25 +46,25 @@ while ret:
                 class_id = int(box.cls[0])  # klasa boxa
 
                 if class_id == 2:  # person
-                    r = box.xyxy[0].astype(int)
-                    x_min, y_min, x_max, y_max = r
+                    if frame_count % skip_frames == 0:
+                        r = box.xyxy[0].astype(int)
+                        x_min, y_min, x_max, y_max = r
 
-                    person_region = frame[y_min:y_max, x_min:x_max]
-                    results = detection_keypoint(person_region)
+                        person_region = frame[y_min:y_max, x_min:x_max]
+                        results = detection_keypoint(person_region)
 
-                    if results:
-                        results_keypoint = detection_keypoint.get_xy_keypoint(results)
-                        input_classification = results_keypoint[10:]
-                        results_classification = classification_keypoint(input_classification)
+                        if results:
+                            results_keypoint = detection_keypoint.get_xy_keypoint(results)
+                            input_classification = results_keypoint[10:]
+                            results_classification = classification_keypoint(input_classification)
 
-                        classifications_dict[id] = results_classification  # Zapamiętaj klasyfikację dla tej osoby
+                            classifications_dict[id] = results_classification  # Zapamiętaj klasyfikację dla tej osoby
 
-                    # Sprawdź, czy mamy klasyfikację dla tej osoby i wyświetl ją co 10 klatek
-                    if id in classifications_dict and frame_count % 10 == 0:
-                        classification_text = classifications_dict[id]
-                        persisted_classifications[id] = classification_text
+                        # Sprawdź, czy mamy klasyfikację dla tej osoby i wyświetl ją co 10 klatek
+                        if id in classifications_dict and frame_count % 10 == 0:
+                            classification_text = classifications_dict[id]
+                            persisted_classifications[id] = classification_text
 
-        # Wyświetl ostatnią klasyfikację co 10 klatek
         for id, classification_text in persisted_classifications.items():
             if id in classifications_dict:
                 r = boxes[ids.tolist().index(id)].xyxy[0].astype(int)
