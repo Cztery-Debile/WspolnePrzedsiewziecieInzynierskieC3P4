@@ -35,8 +35,17 @@ def get_names_list():
                 embedded_image = np.array(ast.literal_eval(row[1]))
                 norm_distance = np.linalg.norm(embedded_image - embedding[0])
                 name = row[2]
+                print(norm_distance)
                 # Dodaj nowe imię i ID do listy
-                names_list.append((name, face_id))
+                if norm_distance < 10.2:
+                    # Sprawdź, czy na liście nie ma już tej samej nazwy
+                    if all(name != existing_name for existing_name, _ in names_list):
+                        # Jeśli nazwa nie istnieje na liście, dodaj nową parę (name, face_id)
+                        new_entry = (name, face_id)
+                        names_list.append(new_entry)
+                    else:
+                        # Jeśli nazwa już istnieje na liście, wykonaj odpowiednie działania (np. zignoruj)
+                        pass
             cur.close()
 
     conn.close()
