@@ -51,5 +51,3 @@ def get_names_list():
     conn.close()
     print(names_list)
     return  names_list
-
-get_names_list()

@@ -80,8 +80,8 @@ def detect_from_video(video_path, model):
                             class_name = model.names[class_id]  #
                             confidence = box[0].conf.astype(float)
                             cv2.rectangle(frame, r[:2], r[2:], (0, 255, 0), 2)  # rysowanie na obrazie boxa
-                            cv2.putText(frame, f'Name: {id}', (r[0] + 50, r[1] - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5,
-                                        (255, 0, 0), 1)
+                            cv2.putText(frame, f'{id}', (r[0] + 50, r[1] - 10), cv2.FONT_HERSHEY_SIMPLEX, 2,
+                                        (255, 0, 0), 3)
                             cv2.putText(frame, f'{confidence}', (r[0] + 10, r[1] + 50), cv2.FONT_HERSHEY_SIMPLEX, 0.5,
                                         (255, 0, 0), 2)
 
