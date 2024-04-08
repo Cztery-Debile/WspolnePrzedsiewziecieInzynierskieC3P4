@@ -29,7 +29,7 @@ def get_connection_pool():
 
 def process_image(file_path):
     device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
-    print('Running on device: {}'.format(device))
+    #print('Running on device: {}'.format(device))
     resnet = InceptionResnetV1(pretrained='vggface2').eval().to(device)
     img = Image.open(file_path).convert('RGB')  # Ensure image is in RGB mode
 
@@ -51,7 +51,7 @@ def process_image(file_path):
 
     end_time = time.time()
     execution_time = end_time - t
-    print("Czas wykonania matematyka:", execution_time, "sekund")
+    #print("Czas wykonania matematyka:", execution_time, "sekund")
 
     return embedding, file_path
 
@@ -110,8 +110,8 @@ def get_names_list():
     finally:
         end_time = time.time()  # Zakończ pomiar czasu
         execution_time = end_time - start_time
-        print("Czas wykonania:", execution_time, "sekund")
-        print(names_list)
+    #    print("Czas wykonania:", execution_time, "sekund")
+    #    print(names_list)
     return names_list
 
 

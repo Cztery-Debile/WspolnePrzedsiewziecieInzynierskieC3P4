@@ -1,4 +1,5 @@
 import os
+import socket
 import threading
 import cv2
 import numpy as np
@@ -9,9 +10,9 @@ from keras.src.saving import load_model
 
 # load yolov8 model
 model_yolo = YOLO('../models/best_today.pt')
-cnn_model = load_model('human_model.h5')
-
-# przechowywanie wykrytych głoów i ich obszaró
+#================================================Jak jesteś Maciek to daj na true================================================
+WSL=True
+# przechowywanie wykrytych głów i ich obszarów
 head_regions_dict = {}
 active_head_ids = []
 
@@ -19,7 +20,7 @@ active_head_ids = []
 classifications_dict = {}
 
 # load video
-video_path = 'ProjektM.mp4'
+video_path = 'Projekt M - Trim.mp4'
 cap = cv2.VideoCapture(video_path)
 
 frame_count = 0
@@ -29,29 +30,63 @@ ret = True
 # Pobranie listy imion i identyfikatorów twarzy
 names_list = get_names_list()
 
-def test_predict(frame):
-    train_action = pd.read_csv("New_model/Training_set.csv")
+#Jakbyście to sobie jeszcze chcieli odpalić to odkomentujcie i zakomentujcie tamtą
+cnn_model = load_model('New_model/human_model.h5')
+if WSL:
+    def test_predict(frame):
+        train_action = pd.read_csv("New_model/Training_set.csv")
 
-    # Skalowanie obrazu do wymaganego rozmiaru
-    resized_frame = cv2.resize(frame, (224, 224))
+        # Skalowanie obrazu do wymaganego rozmiaru
+        resized_frame = cv2.resize(frame, (224, 224))
+        # Konwersja kolorów z BGR na RGB
+        resized_frame_rgb = cv2.cvtColor(resized_frame, cv2.COLOR_BGR2RGB)
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+            s.connect(('127.0.0.1', 3500))  # Connect to the WSL script
 
-    # Konwersja kolorów z BGR na RGB
-    resized_frame_rgb = cv2.cvtColor(resized_frame, cv2.COLOR_BGR2RGB)
+            # Send the data for calculation
+            data = resized_frame_rgb.tobytes()
+            s.sendall(data)
 
-    # Wykonaj predykcję na przeskalowanym obrazie
-    result = cnn_model.predict(np.expand_dims(resized_frame_rgb, axis=0))
+            # Receive and print results until the connection is closed
+            prediction_result = s.recv(16)
+            if not prediction_result:
+                #print("Connection closed by the WSL script.")
+                return None, None  # Return None if no prediction result is received
+            result = np.frombuffer(prediction_result, dtype=np.float32)
 
-    # Przetwarzanie wyników
-    prediction = np.argmax(result)
-    confidence = np.max(result) * 100
-    print("Probability:", confidence, "%")
+        # Przetwarzanie wyników
+        prediction = np.argmax(result)
+        confidence = np.max(result) * 100
 
-    unique_labels = train_action['label'].unique()
-    label_mapping = {label_id: label_name for label_id, label_name in enumerate(unique_labels)}
+        unique_labels = train_action['label'].unique()
+        label_mapping = {label_id: label_name for label_id, label_name in enumerate(unique_labels)}
+        predicted_class = label_mapping[prediction]
 
-    predicted_class = label_mapping[prediction]
-    print(predicted_class)
-    return predicted_class, confidence
+        return predicted_class, confidence
+else:
+    def test_predict(frame):
+        train_action = pd.read_csv("New_model/Training_set.csv")
+
+        # Skalowanie obrazu do wymaganego rozmiaru
+        resized_frame = cv2.resize(frame, (224, 224))
+
+        # Konwersja kolorów z BGR na RGB
+        resized_frame_rgb = cv2.cvtColor(resized_frame, cv2.COLOR_BGR2RGB)
+
+        # Wykonaj predykcję na przeskalowanym obrazie
+        result = cnn_model.predict(np.expand_dims(resized_frame_rgb, axis=0))
+
+        # Przetwarzanie wyników
+        prediction = np.argmax(result)
+        confidence = np.max(result) * 100
+        #print("Probability:", confidence, "%")
+
+        unique_labels = train_action['label'].unique()
+        label_mapping = {label_id: label_name for label_id, label_name in enumerate(unique_labels)}
+
+        predicted_class = label_mapping[prediction]
+        #print(predicted_class)
+        return predicted_class, confidence
 
 
 # Funkcja papcer wykonywana przez pierwszy wątek
@@ -63,7 +98,7 @@ def analyze_video():
         if ret:
             frame_count += 1
 
-            results = model_yolo.track(frame, persist=True)
+            results = model_yolo.track(frame, persist=True, device=0, verbose=False)
             for result in results:
                 boxes = result.boxes.cpu().numpy()
                 ids = result.boxes.id.cpu().numpy().astype(int)
@@ -109,8 +144,9 @@ def analyze_video():
 
                                     # wykrywanie czynnosci
                                     person_region = frame[person_y_min:person_y_max, person_x_min:person_x_max]
-                                    pred = test_predict(person_region)
-                                    classifications_dict[id] = pred
+                                    if frame_count % 15 == 0:
+                                        pred = test_predict(person_region)
+                                        classifications_dict[id] = pred
 
                                     #wypysanie nazwy wykrytej osoby
                                     for name, face_id in names_list:
@@ -127,8 +163,8 @@ def analyze_video():
                                     if y_min < highest_head_y:
                                         highest_head_y = y_min
                                         highest_head_region = head_region_coords
-
-                                        cv2.imwrite(f"../face_detection/compare/face_{id}.png", head_region)
+                                        if frame_count % 70 == 0:
+                                            cv2.imwrite(f"../face_detection/compare/face_{id}.png", head_region)
 
 
                         if highest_head_region is not None:
@@ -136,9 +172,9 @@ def analyze_video():
                             if id not in head_assigned or head_assigned[id] != highest_head_region[-1]:
                                 head_regions_dict[id] = (*highest_head_region[:-1], id)
                                 head_assigned[id] = highest_head_region[-1]
-                            print(head_regions_dict[id])
+                            #print(head_regions_dict[id])
 
-            # jesli w liscie znajduje sie id to znaczy ze wykryto czynnosc dla osoby
+            # #jesli w liscie znajduje sie id to znaczy ze wykryto czynnosc dla osoby
             for id, pred in classifications_dict.items():
                 try:
                     # Get the coordinates of the person from the detection results
@@ -163,10 +199,12 @@ def analyze_video():
                                     thickness=2
                                     )
                     else:
-                        print(f"No box found for ID {id}. Skipping processing for this ID.")
+                        continue
+                     #   print(f"No box found for ID {id}. Skipping processing for this ID.")
                 except ValueError as e:
+                    continue
                     # Handle the situation where the ID is not found in the list of ids
-                    print(f"ID {id} was not found in the list of ids. Skipping processing for this ID.")
+                    #print(f"ID {id} was not found in the list of ids. Skipping processing for this ID.")
 
 
             cv2.imshow("Frame", frame)
@@ -187,7 +225,7 @@ def analyze_video():
 def compare():
     global names_list
     names_list = get_names_list()
-    print(names_list)
+    #print(names_list)
 
 def delete_images():
     folder_path = '../face_detection/compare/'
