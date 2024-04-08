@@ -1,52 +1,69 @@
-import os.path
-import random
-import sys
+import os
 import threading
-import time
-from collections import defaultdict
 import cv2
+import numpy as np
+import pandas as pd
 from ultralytics import YOLO
-from src.detection_keypoint import DetectKeypoint
-from src.classification_keypoint import KeypointClassification
-sys.path.append(os.path.abspath(r"C:\Users\kszcz\OneDrive\Pulpit\przedsięwzięcie\WspolnePrzedsiewziecieInzynierskieC3P4\face_detection"))
-from face_detection.compare import get_names_list  # Importujemy funkcję z pliku compare
+from face_detection.compare import  get_names_list
+from keras.src.saving import load_model
 
 # load yolov8 model
 model_yolo = YOLO('../models/best_today.pt')
-detection_keypoint = DetectKeypoint()
-classification_keypoint = KeypointClassification('czynnosci_latest.pt')
+cnn_model = load_model('human_model.h5')
 
-center_dict = defaultdict(list)
-object_id_list = []
-color_dict = {}
+# przechowywanie wykrytych głoów i ich obszaró
+head_regions_dict = {}
+active_head_ids = []
+
+# przechowywanie osob dla czynnosci
+classifications_dict = {}
 
 # load video
-video_path = 'Projekt M - Trim.mp4'
+video_path = 'ProjektM.mp4'
 cap = cv2.VideoCapture(video_path)
 
-ret = True
-
-def random_color():
-    return tuple(int(random.random() * 255) for _ in range(3))
-
-# Zmienna do śledzenia liczby klatek
 frame_count = 0
+
+ret = True
 
 # Pobranie listy imion i identyfikatorów twarzy
 names_list = get_names_list()
 
+def test_predict(frame):
+    train_action = pd.read_csv("New_model/Training_set.csv")
+
+    # Skalowanie obrazu do wymaganego rozmiaru
+    resized_frame = cv2.resize(frame, (224, 224))
+
+    # Konwersja kolorów z BGR na RGB
+    resized_frame_rgb = cv2.cvtColor(resized_frame, cv2.COLOR_BGR2RGB)
+
+    # Wykonaj predykcję na przeskalowanym obrazie
+    result = cnn_model.predict(np.expand_dims(resized_frame_rgb, axis=0))
+
+    # Przetwarzanie wyników
+    prediction = np.argmax(result)
+    confidence = np.max(result) * 100
+    print("Probability:", confidence, "%")
+
+    unique_labels = train_action['label'].unique()
+    label_mapping = {label_id: label_name for label_id, label_name in enumerate(unique_labels)}
+
+    predicted_class = label_mapping[prediction]
+    print(predicted_class)
+    return predicted_class, confidence
+
+
 # Funkcja papcer wykonywana przez pierwszy wątek
-def papcer():
+def analyze_video():
     global ret, frame_count, names_list
-    classifications_dict = {}
-    persisted_classifications = {}
-    skip_frames = 10
+    head_assigned = {}
     while ret:
         ret, frame = cap.read()
         if ret:
             frame_count += 1
 
-            results = model_yolo.track(frame, persist=True, device=0)
+            results = model_yolo.track(frame, persist=True)
             for result in results:
                 boxes = result.boxes.cpu().numpy()
                 ids = result.boxes.id.cpu().numpy().astype(int)
@@ -56,75 +73,112 @@ def papcer():
                     if class_id == 0:
                         r = box.xyxy[0].astype(int)
                         x_min, y_min, x_max, y_max = r
-                        head_region = frame[y_min:y_max, x_min:x_max]
-                        for name, face_id in names_list:
-                            if face_id == id:
-                                cv2.putText(frame,
-                                            name,
-                                            (x_min, y_min-30),
-                                            cv2.FONT_HERSHEY_SIMPLEX,
-                                            0.5, (0, 0, 255),
-                                            thickness=2
-                                            )
 
-                        if frame_count % 35 == 0 :
-                            cv2.imwrite(f"../face_detection/compare/face_{id}.png", head_region)
+                        #dodanie obszaru glowy do slownika
+                        head_regions_dict[id] = (x_min, y_min, x_max, y_max, id)
+
+                        if id not in active_head_ids:
+                            active_head_ids.append(id)
+
+                        # cv2.rectangle(frame, r[:2], r[2:], (0, 255, 0), 2)
+
+                    if class_id == 2:  # Person
+                        person_box = box.xyxy[0].astype(int)
+                        person_x_min, person_y_min, person_x_max, person_y_max = person_box
+
+                        # cv2.rectangle(frame, person_box[:2], person_box[2:], (0, 255, 0), 2)
+
+                        # cv2.putText(frame, f'{id}', (person_box[0] + 50, person_box[1] - 10), cv2.FONT_HERSHEY_SIMPLEX,
+                        #             2,
+                        #             (255, 0, 0), 3)
+
+                        # Find the head region with the highest position within the person's bounding box
+                        highest_head_y = float('inf')  # Initialize with infinity for comparison
+                        highest_head_region = None
+
+                        for stored_id in active_head_ids:
+                            if stored_id in head_regions_dict:
+                                head_region_coords = head_regions_dict[stored_id]
+                                x_min, y_min, x_max, y_max, person_id = head_region_coords
+
+                                head_region = frame[y_min:y_max, x_min:x_max]
+
+                                # sprawdzenie czy głowa zawiera sie wewnatrz boxa osoby
+                                if (x_min >= person_x_min and y_min >= person_y_min and
+                                        x_max <= person_x_max and y_max <= person_y_max):
+
+                                    # wykrywanie czynnosci
+                                    person_region = frame[person_y_min:person_y_max, person_x_min:person_x_max]
+                                    pred = test_predict(person_region)
+                                    classifications_dict[id] = pred
+
+                                    #wypysanie nazwy wykrytej osoby
+                                    for name, face_id in names_list:
+                                        if face_id == id:
+                                            cv2.putText(frame,
+                                                        name,
+                                                        (x_min, y_min - 30),
+                                                        cv2.FONT_HERSHEY_SIMPLEX,
+                                                        0.5, (0, 0, 255),
+                                                        thickness=2
+                                                        )
+
+                                    # sprawdzenie czy glowa jest najwyzej w boxie osoby
+                                    if y_min < highest_head_y:
+                                        highest_head_y = y_min
+                                        highest_head_region = head_region_coords
+
+                                        cv2.imwrite(f"../face_detection/compare/face_{id}.png", head_region)
 
 
+                        if highest_head_region is not None:
+                            # Update head region only if it's the latest position for the person's bounding box
+                            if id not in head_assigned or head_assigned[id] != highest_head_region[-1]:
+                                head_regions_dict[id] = (*highest_head_region[:-1], id)
+                                head_assigned[id] = highest_head_region[-1]
+                            print(head_regions_dict[id])
 
-                    if class_id == 2:  # person
-                        if frame_count % skip_frames == 0:
-                            r = box.xyxy[0].astype(int)
-                            x_min, y_min, x_max, y_max = r
-
-                            person_region = frame[y_min:y_max, x_min:x_max]
-                            results = detection_keypoint(person_region)
-
-                            if results:
-                                results_keypoint = detection_keypoint.get_xy_keypoint(results)
-                                input_classification = results_keypoint[10:]
-                                results_classification = classification_keypoint(input_classification)
-
-                                classifications_dict[id] = results_classification
-
-                            if id in classifications_dict and frame_count % 2 == 0:
-                                classification_text = classifications_dict[id]
-                                persisted_classifications[id] = classification_text
-
-            for id, classification_text in persisted_classifications.items():
-                if id in classifications_dict:
-                    try:
-                        index = ids.tolist().index(id)
-                        r = boxes[index].xyxy[0].astype(int)
-                        x_min, y_min = r[0], r[1]
-                        (w, h), _ = cv2.getTextSize(
-                            classification_text.upper(),
-                            cv2.FONT_HERSHEY_SIMPLEX, 0.5, 2
-                        )
-                        text_x = x_min
-                        text_y = y_min - 4
-
-                        if text_y - h < 0:
-                            text_y = y_min + h + 4
+            # jesli w liscie znajduje sie id to znaczy ze wykryto czynnosc dla osoby
+            for id, pred in classifications_dict.items():
+                try:
+                    # Get the coordinates of the person from the detection results
+                    box_indices = np.where(ids == id)[0]
+                    if len(box_indices) > 0:
+                        box_index = box_indices[0]
+                        r = boxes[box_index].xyxy[0].astype(int)
 
                         cv2.putText(frame,
-                                    f'{classification_text.upper()}',
-                                    (text_x, text_y),
+                                    f'{pred[0]}',
+                                    (r[0] + 20, r[1] + 100),
                                     cv2.FONT_HERSHEY_SIMPLEX,
-                                    0.5, (0,0 , 255),
+                                    0.6, (0, 255, 0),
                                     thickness=2
                                     )
-                    except ValueError:
-                        print(f"ID {id} not found in ids list. Skipping processing for this id.")
 
-            cv2.imshow('Frame', frame)
+                        cv2.putText(frame,
+                                    f'{round(pred[1], 2)}',
+                                    (r[0] + 20, r[1] + 130),
+                                    cv2.FONT_HERSHEY_SIMPLEX,
+                                    0.6, (0, 255, 255),
+                                    thickness=2
+                                    )
+                    else:
+                        print(f"No box found for ID {id}. Skipping processing for this ID.")
+                except ValueError as e:
+                    # Handle the situation where the ID is not found in the list of ids
+                    print(f"ID {id} was not found in the list of ids. Skipping processing for this ID.")
 
-            if cv2.waitKey(25) & 0xFF == ord('q'):
-                break
 
-            if frame_count % 35 == 0 :
+            cv2.imshow("Frame", frame)
+
+            # odpalanie funkcji compare
+            if frame_count % 70 == 0:
                 t2 = threading.Thread(target=compare)
                 t2.start()
+
+            if cv2.waitKey(25) & 0xFF == ord('q'):
+                delete_images()
+                break
 
     cap.release()
     cv2.destroyAllWindows()
@@ -135,8 +189,19 @@ def compare():
     names_list = get_names_list()
     print(names_list)
 
+def delete_images():
+    folder_path = '../face_detection/compare/'
+
+    files_to_delete = os.listdir(folder_path)
+
+    # Iteruj przez każdy element w liście
+    for file in files_to_delete:
+        full_path = os.path.join(folder_path, file)
+        os.remove(full_path)
+
+
 # Tworzenie wątku dla funkcji papcer
-t1 = threading.Thread(target=papcer)
+t1 = threading.Thread(target=analyze_video)
 
 # Uruchomienie wątku
 t1.start()
