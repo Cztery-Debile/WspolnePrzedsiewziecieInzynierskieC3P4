@@ -20,7 +20,7 @@ active_head_ids = []
 classifications_dict = {}
 
 # load video
-video_path = 'Projekt M - Trim.mp4'
+video_path = 'Projekt M.mp4'
 cap = cv2.VideoCapture(video_path)
 
 frame_count = 0
@@ -31,7 +31,7 @@ ret = True
 names_list = get_names_list()
 
 #Jakbyście to sobie jeszcze chcieli odpalić to odkomentujcie i zakomentujcie tamtą
-cnn_model = load_model('New_model/human_model.h5')
+
 if WSL:
     def test_predict(frame):
         train_action = pd.read_csv("New_model/Training_set.csv")
@@ -64,6 +64,7 @@ if WSL:
 
         return predicted_class, confidence
 else:
+    cnn_model = load_model('New_model/human_model.h5')
     def test_predict(frame):
         train_action = pd.read_csv("New_model/Training_set.csv")
 
@@ -143,26 +144,18 @@ def analyze_video():
                                         x_max <= person_x_max and y_max <= person_y_max):
 
                                     # wykrywanie czynnosci
-                                    person_region = frame[person_y_min:person_y_max, person_x_min:person_x_max]
+
                                     if frame_count % 15 == 0:
+                                        person_region = frame[person_y_min:person_y_max, person_x_min:person_x_max]
                                         pred = test_predict(person_region)
                                         classifications_dict[id] = pred
 
-                                    #wypysanie nazwy wykrytej osoby
-                                    for name, face_id in names_list:
-                                        if face_id == id:
-                                            cv2.putText(frame,
-                                                        name,
-                                                        (x_min, y_min - 30),
-                                                        cv2.FONT_HERSHEY_SIMPLEX,
-                                                        0.5, (0, 0, 255),
-                                                        thickness=2
-                                                        )
 
                                     # sprawdzenie czy glowa jest najwyzej w boxie osoby
                                     if y_min < highest_head_y:
                                         highest_head_y = y_min
                                         highest_head_region = head_region_coords
+
                                         if frame_count % 70 == 0:
                                             cv2.imwrite(f"../face_detection/compare/face_{id}.png", head_region)
 
@@ -182,6 +175,17 @@ def analyze_video():
                     if len(box_indices) > 0:
                         box_index = box_indices[0]
                         r = boxes[box_index].xyxy[0].astype(int)
+
+                        # wypysanie nazwy wykrytej osoby
+                        for name, face_id in names_list:
+                            if face_id == id:
+                                cv2.putText(frame,
+                                            name,
+                                            (r[0], r[1] - 30),
+                                            cv2.FONT_HERSHEY_SIMPLEX,
+                                            0.5, (0, 0, 255),
+                                            thickness=2
+                                            )
 
                         cv2.putText(frame,
                                     f'{pred[0]}',
