@@ -70,9 +70,9 @@ def process_results(results):
                         embedded_image = np.array(ast.literal_eval(row[1]))
                         norm_distance = np.linalg.norm(embedded_image - embedding[0])
                         name = row[2]
-                    #    print(norm_distance)
+                        print(norm_distance)
                         # Dodaj nowe imię i ID do listy
-                        if norm_distance < 10.2:
+                        if norm_distance < 1:
                             # Sprawdź, czy na liście nie ma już tej samej nazwy
 
                             if all(name != existing_name for existing_name, _ in names_list):
@@ -111,7 +111,7 @@ def get_names_list():
         end_time = time.time()  # Zakończ pomiar czasu
         execution_time = end_time - start_time
     #    print("Czas wykonania:", execution_time, "sekund")
-    #    print(names_list)
+        print(names_list)
     return names_list
 
 
