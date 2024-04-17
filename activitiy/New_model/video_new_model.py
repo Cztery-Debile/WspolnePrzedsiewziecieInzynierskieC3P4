@@ -8,7 +8,7 @@ from ultralytics import YOLO
 
 # load yolov8 model
 model_yolo = YOLO('../../models/best_today.pt')
-cnn_model = load_model('human_model_last.h5')
+cnn_model = load_model('new_data5.h5')
 
 # load video
 video_path = '../x.mp4'

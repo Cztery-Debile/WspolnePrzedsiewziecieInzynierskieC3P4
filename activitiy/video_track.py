@@ -9,9 +9,10 @@ from face_detection.compare import  get_names_list
 from keras.src.saving import load_model
 
 # load yolov8 model
-model_yolo = YOLO('../models/best_today.pt')
+
 #================================================Jak jesteś Maciek to daj na true================================================
-WSL=True
+global WSL
+WSL = True
 # przechowywanie wykrytych głów i ich obszarów
 head_regions_dict = {}
 active_head_ids = []
@@ -20,9 +21,6 @@ active_head_ids = []
 classifications_dict = {}
 
 # load video
-video_path = 'Projekt M.mp4'
-cap = cv2.VideoCapture(video_path)
-
 frame_count = 0
 
 ret = True
@@ -34,8 +32,7 @@ names_list = get_names_list()
 
 if WSL:
     def test_predict(frame):
-        train_action = pd.read_csv("New_model/Training_set.csv")
-
+        train_action = pd.read_csv("activitiy/New_model/Training_set.csv")
         # Skalowanie obrazu do wymaganego rozmiaru
         resized_frame = cv2.resize(frame, (224, 224))
         # Konwersja kolorów z BGR na RGB
@@ -91,7 +88,10 @@ else:
 
 
 # Funkcja papcer wykonywana przez pierwszy wątek
-def analyze_video():
+def analyze_video(model_path,video_path):
+    compare()
+    model_yolo = YOLO(model_path)
+    cap = cv2.VideoCapture(video_path)
     global ret, frame_count, names_list
     head_assigned = {}
     while ret:
@@ -157,7 +157,7 @@ def analyze_video():
                                         highest_head_region = head_region_coords
 
                                         if frame_count % 70 == 0:
-                                            cv2.imwrite(f"../face_detection/compare/face_{id}.png", head_region)
+                                            cv2.imwrite(f"face_detection/compare/face_{id}.png", head_region)
 
 
                         if highest_head_region is not None:
@@ -232,7 +232,7 @@ def compare():
     #print(names_list)
 
 def delete_images():
-    folder_path = '../face_detection/compare/'
+    folder_path = 'face_detection/compare/'
 
     files_to_delete = os.listdir(folder_path)
 
@@ -241,12 +241,12 @@ def delete_images():
         full_path = os.path.join(folder_path, file)
         os.remove(full_path)
 
-
-# Tworzenie wątku dla funkcji papcer
-t1 = threading.Thread(target=analyze_video)
-
-# Uruchomienie wątku
-t1.start()
-
-# Oczekiwanie na zakończenie wątku
-t1.join()
+#
+# # Tworzenie wątku dla funkcji papcer
+# t1 = threading.Thread(target=analyze_video)
+#
+# # Uruchomienie wątku
+# t1.start()
+#
+# # Oczekiwanie na zakończenie wątku
+# t1.join()

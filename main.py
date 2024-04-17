@@ -2,6 +2,7 @@ from tkinter import *
 from tkinter import filedialog
 from bin.photo_detect import photo_detect
 from bin.video import detect_from_video
+from activitiy.video_track import analyze_video
 import customtkinter
 import cv2
 import numpy as np
@@ -18,10 +19,10 @@ def change_active_button(self,selection):
 
 def video_button_handler(method):
     if method == 'camera':
-        detect_from_video(0,model_path)
+        detect_from_video("rtsp://localhost:8554/file?file=tokio.mkv",model_path)
     else:
         filepath = filedialog.askopenfilename(filetypes=[("Videos", "*.mp4;*.avi;*.mkv;*.mov")])
-        detect_from_video(filepath,model_path)
+        analyze_video(model_path,filepath)
 
 customtkinter.set_appearance_mode("Dark")  # Modes: "System" (standard), "Dark", "Light"
 customtkinter.set_default_color_theme("blue")  # Themes: "blue" (standard), "green", "dark-blue"
@@ -29,13 +30,14 @@ customtkinter.set_default_color_theme("blue")  # Themes: "blue" (standard), "gre
 width = 1280
 height = 720
 title="NazwaRobocza™"
-model_path = "models/best_today.pt"
+model_path = "models/bestTokio.pt"
 
 class App(customtkinter.CTk):
     drawing_with_rectangle = False
     selected_areas=[]
     polyline_area=[]
     isDrawing = False
+
 
     def bind_selection(self, start_function, draw_function, end_function):
             self.canvas.bind("<Button-1>", start_function)
@@ -47,11 +49,12 @@ class App(customtkinter.CTk):
     def select_with_polyline(self):
         self.bind_selection(self.select_area,self.select_area,self.select_area)
         change_active_button(self,"polyline")
-    def analyze_photos(self,image_path, model_path,selected_areas):
-        analyzed_image = photo_detect(image_path, model_path, selected_areas)
+    def analyze_photos(self,image_path, model_path,selected_areas,process_whole_frame=False):
+        analyzed_image = photo_detect(image_path, model_path,selected_areas,process_whole_frame)
         self.canvas.image = analyzed_image
         self.canvas.create_image(0, 0, image=analyzed_image, anchor=NW)
         self.selected_areas = []
+
 
     def select_area(self, event):
         x, y = event.x, event.y
@@ -108,7 +111,7 @@ class App(customtkinter.CTk):
         if(len(self.selected_areas)>0):
             self.analyze_button.configure(state="normal")
     def load_photo(self):
-        self.filepath = filedialog.askopenfilename(filetypes=[("Images", "*.jpg;*.jpeg;*.png")])
+        self.filepath = filedialog.askopenfilename(filetypes=[("Images", "*.jpg;*.jpeg;*.png;*.webp")])
         self.drawing_method_frame.grid(row=5, column=0, rowspan=3, sticky="n")
         self.image = Image.open(self.filepath)
 
@@ -128,7 +131,8 @@ class App(customtkinter.CTk):
         # configure window
         self.title("NazwaRobocza™ Recognition System")
         self.geometry(f"{1100}x{580}")
-
+        self.analyze_activity = customtkinter.BooleanVar()
+        self.analyze_faces = customtkinter.BooleanVar()
         # configure grid layout (4x4)
         self.grid_columnconfigure(1, weight=1)
         self.grid_columnconfigure((2, 3), weight=0)
@@ -143,10 +147,10 @@ class App(customtkinter.CTk):
 
         #==================================DRAWING METHODS + FRAME==================================
 
-        self.drawing_method_frame = customtkinter.CTkFrame(self, corner_radius=0)
+        self.drawing_method_frame = customtkinter.CTkFrame(self.sidebar_frame, corner_radius=0)
 
         self.drawing_method_frame.columnconfigure(2, weight=1)
-        self.drawing_method_frame.grid_rowconfigure(3, weight=1)
+        self.drawing_method_frame.grid_rowconfigure(4, weight=1)
         self.drawing_method_title=customtkinter.CTkLabel(self.drawing_method_frame,text="Wybierz metodę\nzaznaczania:",
                                                          font=customtkinter.CTkFont(size=20, weight="bold"))
 
@@ -161,13 +165,19 @@ class App(customtkinter.CTk):
                                                       command=lambda: self.analyze_photos(self.filepath,
                                                                                           model_path,
                                                                                           self.selected_areas))
+        self.analyze_whole_button = customtkinter.CTkButton(self.drawing_method_frame, text="Analizuj całe zdjęcie",
+                                                      command=lambda: self.analyze_photos(self.filepath,
+                                                                                          model_path,
+                                                                                          self.selected_areas,process_whole_frame=True))
 
         self.drawing_method_title.grid(row=0, column=0, pady=10, columnspan=2)
         self.draw_rectangle_button.grid(row=1, column=0,columnspan=2, pady=10)
         self.draw_polyline_button.grid(row=2, column=0,columnspan=2, pady=10)
         self.analyze_button.grid(row=3, column=0, columnspan=2, pady=10)
+        self.analyze_whole_button.grid(row=4, column=0, columnspan=2, pady=10)
 
         # ==================================END OF DRAWING METHODS + FRAME==================================
+
         #self.drawing_method_frame.grid_remove()
         # ================================== ANALYSIS SOURCE FRANE =========================================
 

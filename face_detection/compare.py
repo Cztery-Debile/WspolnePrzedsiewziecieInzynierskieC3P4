@@ -92,7 +92,7 @@ def process_results(results):
 def get_names_list():
     start_time = time.time()
     # Ścieżka do katalogu zawierającego zdjęcia do porównania
-    compare_folder = "../face_detection/compare"
+    compare_folder = "face_detection/compare"
 
     try:
         # Utwórz pulę wątków
@@ -111,7 +111,7 @@ def get_names_list():
         end_time = time.time()  # Zakończ pomiar czasu
         execution_time = end_time - start_time
     #    print("Czas wykonania:", execution_time, "sekund")
-        print(names_list)
+        #print(names_list)
     return names_list
 
 

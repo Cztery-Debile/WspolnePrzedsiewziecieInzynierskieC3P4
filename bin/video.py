@@ -64,7 +64,7 @@ def detect_from_video(video_path, model):
             # detect objects
             # track objects
 
-            results = model.track(frame, persist=True, conf=0.5)
+            results = model.track(frame, persist=True)
             for result in results:
                 if result.boxes is None or result.boxes.id is None:
                     resized_frame = cv2.resize(frame, (1140, 740))
