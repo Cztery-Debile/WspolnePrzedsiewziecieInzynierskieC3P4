@@ -5,8 +5,9 @@ import threading
 from collections import defaultdict
 import cv2
 import numpy as np
+from pyexcel.cookbook import merge_all_to_a_book
+import glob
 import pandas as pd
-from fpdf import FPDF
 from keras.src.saving import load_model
 from ultralytics import YOLO
 from PIL import Image
@@ -84,7 +85,7 @@ def detect_from_video_zone(video_path, model):
 
             cv2.rectangle(frame, (specified_region[0], specified_region[1]), (specified_region[2], specified_region[3]), (0, 255, 0), 2)
 
-            results = model_yolo.track(frame, persist=True)
+            results = model_yolo.track(frame, persist=True,device=0, verbose=False)
 
             current_time_ms = cap.get(cv2.CAP_PROP_POS_MSEC)
 
@@ -203,15 +204,15 @@ def detect_from_video_zone(video_path, model):
                         box_index = box_indices[0]
                         r = boxes[box_index].xyxy[0].astype(int)
 
-                        cv2.rectangle(frame, r[:2], r[2:], (255,0,0), 2)  # rysowanie na obrazie boxa
-                        # Display the activity above the person's head
-                        cv2.putText(frame,
-                                    f'{id}',
-                                    (r[0] + 20, r[1] + 30),
-                                    cv2.FONT_HERSHEY_SIMPLEX,
-                                    1, (0, 255, 0),
-                                    thickness=3
-                                    )
+                        # cv2.rectangle(frame, r[:2], r[2:], (255,0,0), 2)  # rysowanie na obrazie boxa
+                        # # Display the activity above the person's head
+                        # cv2.putText(frame,
+                        #             f'{id}',
+                        #             (r[0] + 20, r[1] + 30),
+                        #             cv2.FONT_HERSHEY_SIMPLEX,
+                        #             1, (0, 255, 0),
+                        #             thickness=3
+                        #             )
 
                     else:
                         print(f"No box found for ID {id}. Skipping processing for this ID.")
@@ -257,5 +258,6 @@ def generate_report(person_time, output_file):
         for person_id, (person, total_time, num_tasks) in person_time.items():
             writer.writerow({'ID': person_id, 'Osoba': person, 'Całkowity czas (s)': total_time, 'Ilość wykonanych rzeczy': num_tasks})
 
-    os.system(output_file)
+    merge_all_to_a_book(glob.glob(output_file), f"{output_file.rstrip(".csv")}.xlsx")
+    os.system(output_file.rstrip(".csv")+".xlsx")
 

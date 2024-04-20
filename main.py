@@ -21,7 +21,7 @@ def change_active_button(self,selection):
 
 def video_button_handler(method):
     if method == 'camera':
-        detect_from_video_zone("rtsp://localhost:8554/file?file=tokio.mkv",model_path)
+        detect_from_video_zone("rtsp://localhost:8554/file?file=ProjektMBox.mkv",model_path)
     else:
         filepath = filedialog.askopenfilename(filetypes=[("Videos", "*.mp4;*.avi;*.mkv;*.mov")])
         analyze_video(model_path,filepath)
