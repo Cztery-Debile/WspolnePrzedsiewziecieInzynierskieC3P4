@@ -55,8 +55,9 @@ def process_image(file_path):
 
     return embedding, file_path
 
-def process_results(results):
-    names_list = []
+def process_results(results, prev_name_dict):
+    names_list = prev_name_dict.copy() # zaldowanie poprzedniej listy
+
     conn_pool = get_connection_pool()
     try:
         with conn_pool.getconn() as conn:
@@ -72,24 +73,29 @@ def process_results(results):
                         name = row[2]
                         print(norm_distance)
                         # Dodaj nowe imię i ID do listy
-                        if norm_distance < 1:
-                            # Sprawdź, czy na liście nie ma już tej samej nazwy
 
-                            if all(name != existing_name for existing_name, _ in names_list):
-                                # Jeśli nazwa nie istnieje na liście, dodaj nową parę (name, face_id)
-                                face_id = int(os.path.basename(file_path).split("_")[1].split(".")[0])
-                                new_entry = (name, face_id)
-                                names_list.append(new_entry)
-                            else:
-                                # Jeśli nazwa już istnieje na liście, wykonaj odpowiednie działania (np. zignoruj)
-                                pass
+                        face_id = int(os.path.basename(file_path).split("_")[1].split(".")[0])
+                        if norm_distance < 1 and (face_id not in names_list or norm_distance < names_list[face_id][1]):
+                            names_list[face_id] = (name, norm_distance)
+
+                        # if norm_distance < 1:
+                        #     # Sprawdź, czy na liście nie ma już tej samej nazwy
+                        #
+                        #     if all(name != existing_name for existing_name, _ in names_list):
+                        #         # Jeśli nazwa nie istnieje na liście, dodaj nową parę (name, face_id)
+                        #         face_id = int(os.path.basename(file_path).split("_")[1].split(".")[0])
+                        #         new_entry = (name, face_id)
+                        #         names_list.append(new_entry)
+                        #     else:
+                        #         # Jeśli nazwa już istnieje na liście, wykonaj odpowiednie działania (np. zignoruj)
+                        #         pass
 
     finally:
         conn_pool.closeall()
     return names_list
 
 
-def get_names_list():
+def get_names_list(prev_name_dict):
     start_time = time.time()
     # Ścieżka do katalogu zawierającego zdjęcia do porównania
     compare_folder = "face_detection/compare"
@@ -106,7 +112,7 @@ def get_names_list():
             results = [future.result() for future in futures]
 
             # Przetwórz wyniki
-            names_list = process_results(results)
+            names_list = process_results(results, prev_name_dict)
     finally:
         end_time = time.time()  # Zakończ pomiar czasu
         execution_time = end_time - start_time
@@ -115,4 +121,4 @@ def get_names_list():
     return names_list
 
 
-get_names_list()
+get_names_list({})

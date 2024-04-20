@@ -26,7 +26,7 @@ frame_count = 0
 ret = True
 
 # Pobranie listy imion i identyfikatorów twarzy
-names_list = get_names_list()
+names_list = get_names_list({})
 
 #Jakbyście to sobie jeszcze chcieli odpalić to odkomentujcie i zakomentujcie tamtą
 
@@ -177,7 +177,7 @@ def analyze_video(model_path,video_path):
                         r = boxes[box_index].xyxy[0].astype(int)
 
                         # wypysanie nazwy wykrytej osoby
-                        for name, face_id in names_list:
+                        for face_id, (name, _) in names_list.items():
                             if face_id == id:
                                 cv2.putText(frame,
                                             name,
@@ -218,7 +218,7 @@ def analyze_video(model_path,video_path):
                 t2 = threading.Thread(target=compare)
                 t2.start()
 
-            if cv2.waitKey(25) & 0xFF == ord('q'):
+            if cv2.waitKey(1) & 0xFF == ord('q'):
                 delete_images()
                 break
 
@@ -228,7 +228,7 @@ def analyze_video(model_path,video_path):
 # Funkcja compare wykonywana przez drugi wątek
 def compare():
     global names_list
-    names_list = get_names_list()
+    names_list = get_names_list(names_list)
     #print(names_list)
 
 def delete_images():

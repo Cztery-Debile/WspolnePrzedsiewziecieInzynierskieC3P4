@@ -15,7 +15,7 @@ import time
 from face_detection.compare import get_names_list
 
 # Pobranie listy imion i identyfikatorów twarzy
-names_list = get_names_list()
+names_list = get_names_list({})
 
 def detect_from_video_zone(video_path, model):
     compare()
@@ -137,7 +137,7 @@ def detect_from_video_zone(video_path, model):
                                             highest_head_y = y_min
                                             highest_head_region = head_region_coords
 
-                                            if frame_count % 70 == 0:
+                                            if frame_count % 60 == 0:
                                                 cv2.imwrite(f"face_detection/compare/face_{id}.png", head_region)
 
                             if highest_head_region is not None:
@@ -153,7 +153,7 @@ def detect_from_video_zone(video_path, model):
                                  person_x_min <= specified_region[2] and person_y_min <= specified_region[3])):
 
                                 # sprawdzenie czy id wykrytej osoby pokrywa sie z id twarzy, przypisanie tej osoby do listy osob w zonie wraz z jej imieniem i start czasu
-                                for name, face_id in names_list:
+                                for face_id, (name, _) in names_list.items():
                                     if face_id == id:
                                         if id not in people_in_zone:
                                             people_in_zone[id] = name, current_time_ms
@@ -185,7 +185,7 @@ def detect_from_video_zone(video_path, model):
 
                                 else:
                                     # wyświetlanie aktulanie przypisanego imienia dla osob poza zonem
-                                    for name, face_id in names_list:
+                                    for face_id, (name, _) in names_list.items():
                                         if face_id == id:
                                             cv2.putText(frame,
                                                         name,
@@ -221,11 +221,11 @@ def detect_from_video_zone(video_path, model):
 
             cv2.imshow('Frame', frame)
 
-            if frame_count % 70 == 0:
+            if frame_count % 60 == 0:
                 t2 = threading.Thread(target=compare)
                 t2.start()
 
-            if cv2.waitKey(25) & 0xFF == ord('q'):
+            if cv2.waitKey(1) & 0xFF == ord('q'):
                 delete_images()
                 generate_report(person_time, 'person_report.csv')
                 break
@@ -233,7 +233,9 @@ def detect_from_video_zone(video_path, model):
 
 def compare():
     global names_list
-    names_list = get_names_list()
+    print('stara list:', names_list)
+    names_list = get_names_list(names_list)
+    print('nowa lista:' , names_list)
 
 
 def delete_images():
@@ -254,3 +256,6 @@ def generate_report(person_time, output_file):
         writer.writeheader()
         for person_id, (person, total_time, num_tasks) in person_time.items():
             writer.writerow({'ID': person_id, 'Osoba': person, 'Całkowity czas (s)': total_time, 'Ilość wykonanych rzeczy': num_tasks})
+
+    os.system(output_file)
+
