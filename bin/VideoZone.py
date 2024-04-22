@@ -10,6 +10,7 @@ from pyexcel.cookbook import merge_all_to_a_book
 import glob
 from ultralytics import YOLO
 
+from bin.make_report import make_report
 from face_detection.compare import get_names_list
 
 # Pobranie listy imion i identyfikatorów twarzy
@@ -225,15 +226,8 @@ def detect_from_video_zone(video_path, model):
 
             if cv2.waitKey(1) & 0xFF == ord('q'):
                 delete_images()
-
                 # tworzenie raportu
-                folder_path = 'reports/videos'
-                current_time = datetime.datetime.now()
-                formatted_time = current_time.strftime("%Y-%m-%d_%H-%M")
-                folder_path = os.path.join('reports/videos', formatted_time)
-                os.makedirs(folder_path, exist_ok=True)
-                output_file = os.path.join(folder_path, f'p_report_{formatted_time}.csv')
-                generate_report(person_time, output_file)
+                make_report(person_time, None, None, True)
                 break
 
 
@@ -254,15 +248,4 @@ def delete_images():
         full_path = os.path.join(folder_path, file)
         os.remove(full_path) 
 
-
-def generate_report(person_time, output_file):
-    with open(output_file, 'w', newline='', encoding='UTF8') as csvfile:
-        fieldnames = ['ID', 'Osoba', 'Całkowity czas (s)', 'Ilość wykonanych rzeczy']
-        writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
-        writer.writeheader()
-        for person_id, (person, total_time, num_tasks) in person_time.items():
-            writer.writerow({'ID': person_id, 'Osoba': person, 'Całkowity czas (s)': total_time, 'Ilość wykonanych rzeczy': num_tasks})
-
-    merge_all_to_a_book(glob.glob(output_file), f"{output_file.rstrip('.csv')}.xlsx")
-    os.startfile(output_file.rstrip(".csv")+".xlsx")
 

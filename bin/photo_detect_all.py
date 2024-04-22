@@ -6,7 +6,7 @@ from PIL import Image, ImageTk
 import cv2
 from ultralytics import YOLO
 
-from bin.photo_detect import generate_report
+from bin.make_report import make_report
 
 
 def random_color():
@@ -52,11 +52,6 @@ def photo_detect(image_path, model_path):
     tk_image = ImageTk.PhotoImage(pil_image)
 
     # tworzenie raportu
-    current_time = datetime.datetime.now()
-    formatted_time = current_time.strftime("%Y-%m-%d_%H-%M")
-    folder_path = os.path.join('reports/photos', formatted_time)
-    os.makedirs(folder_path, exist_ok=True)
-    output_file = os.path.join(folder_path, f'p_report_{formatted_time}.csv')
-    generate_report(all_detect_count, output_file, image_path)
+    make_report(None, image_path, all_detect_count, False)
 
     return tk_image

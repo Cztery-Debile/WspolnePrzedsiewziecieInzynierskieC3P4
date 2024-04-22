@@ -3,6 +3,7 @@ from tkinter import filedialog
 
 from bin.VideoZone import detect_from_video_zone
 from bin.photo_detect import photo_detect
+from bin.video import detect_from_video
 from bin.video_track import analyze_video
 import customtkinter
 from PIL import Image, ImageTk, ImageDraw
@@ -21,7 +22,7 @@ def video_button_handler(method):
         detect_from_video_zone("rtsp://localhost:8554/file?file=tokio.mkv",model_path)
     else:
         filepath = filedialog.askopenfilename(filetypes=[("Videos", "*.mp4;*.avi;*.mkv;*.mov")])
-        analyze_video(model_path,filepath)
+        detect_from_video(model_path, filepath)
 
 customtkinter.set_appearance_mode("Dark")  # Modes: "System" (standard), "Dark", "Light"
 customtkinter.set_default_color_theme("blue")  # Themes: "blue" (standard), "green", "dark-blue"
@@ -29,7 +30,7 @@ customtkinter.set_default_color_theme("blue")  # Themes: "blue" (standard), "gre
 width = 1280
 height = 720
 title="NazwaRobocza™"
-model_path = "models/28_best.pt"
+model_path = "models/best_today.pt"
 
 class App(customtkinter.CTk):
     drawing_with_rectangle = False
