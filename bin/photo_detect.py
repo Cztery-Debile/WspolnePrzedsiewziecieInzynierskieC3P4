@@ -1,13 +1,28 @@
+import csv
+import datetime
+import glob
+import os
 import random
 
 import numpy as np
 from PIL import Image, ImageTk
 import cv2
+from pyexcel import merge_all_to_a_book
 from ultralytics import YOLO
 
 
 def random_color():
     return tuple(int(random.random() * 255) for _ in range(3))
+
+def generate_report(all_detect_count, output_file, image_path):
+    with open(output_file, 'w', newline='', encoding='UTF8') as csvfile:
+        fieldnames = ['Nazwa Pliku', 'Łączna ilość wykrytych osób']
+        writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+        writer.writeheader()
+        writer.writerow({'Nazwa Pliku' : image_path ,  'Łączna ilość wykrytych osób': all_detect_count})
+
+    merge_all_to_a_book(glob.glob(output_file), f"{output_file.rstrip('.csv')}.xlsx")
+    os.startfile(output_file.rstrip(".csv")+".xlsx")
 
 def photo_detect(image_path, model_path, selected_areas, process_whole_frame=False):
     model = YOLO(model_path)
@@ -139,5 +154,15 @@ def photo_detect(image_path, model_path, selected_areas, process_whole_frame=Fal
     tk_image = ImageTk.PhotoImage(pil_image)
 
     print(all_detect_count)
+
+    # tworzenie raportu
+    current_time = datetime.datetime.now()
+    formatted_time = current_time.strftime("%Y-%m-%d_%H-%M")
+    folder_path = os.path.join('reports/photos', formatted_time)
+    os.makedirs(folder_path, exist_ok=True)
+    output_file = os.path.join(folder_path, f'p_report_{formatted_time}.csv')
+    generate_report(all_detect_count, output_file, image_path)
+
+    print(image_path)
 
     return tk_image

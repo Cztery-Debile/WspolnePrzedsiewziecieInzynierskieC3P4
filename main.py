@@ -1,13 +1,10 @@
 from tkinter import *
 from tkinter import filedialog
 
-from activitiy.New_model.VideoZone import detect_from_video_zone
+from bin.VideoZone import detect_from_video_zone
 from bin.photo_detect import photo_detect
-from bin.video import detect_from_video
-from activitiy.video_track import analyze_video
+from bin.video_track import analyze_video
 import customtkinter
-import cv2
-import numpy as np
 from PIL import Image, ImageTk, ImageDraw
 
 def change_active_button(self,selection):
@@ -21,7 +18,7 @@ def change_active_button(self,selection):
 
 def video_button_handler(method):
     if method == 'camera':
-        detect_from_video_zone("rtsp://localhost:8554/file?file=ProjektMBox.mkv",model_path)
+        detect_from_video_zone("rtsp://localhost:8554/file?file=tokio.mkv",model_path)
     else:
         filepath = filedialog.askopenfilename(filetypes=[("Videos", "*.mp4;*.avi;*.mkv;*.mov")])
         analyze_video(model_path,filepath)
@@ -32,7 +29,7 @@ customtkinter.set_default_color_theme("blue")  # Themes: "blue" (standard), "gre
 width = 1280
 height = 720
 title="NazwaRobocza™"
-model_path = "models/best_today.pt"
+model_path = "models/28_best.pt"
 
 class App(customtkinter.CTk):
     drawing_with_rectangle = False

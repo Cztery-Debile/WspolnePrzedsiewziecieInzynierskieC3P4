@@ -1,8 +1,13 @@
+import datetime
+import os
 import random
 import numpy as np
 from PIL import Image, ImageTk
 import cv2
 from ultralytics import YOLO
+
+from bin.photo_detect import generate_report
+
 
 def random_color():
     return tuple(int(random.random() * 255) for _ in range(3))
@@ -46,6 +51,12 @@ def photo_detect(image_path, model_path):
     # Convert PIL Image to Tkinter compatible format
     tk_image = ImageTk.PhotoImage(pil_image)
 
-    print(all_detect_count)
+    # tworzenie raportu
+    current_time = datetime.datetime.now()
+    formatted_time = current_time.strftime("%Y-%m-%d_%H-%M")
+    folder_path = os.path.join('reports/photos', formatted_time)
+    os.makedirs(folder_path, exist_ok=True)
+    output_file = os.path.join(folder_path, f'p_report_{formatted_time}.csv')
+    generate_report(all_detect_count, output_file, image_path)
 
     return tk_image
