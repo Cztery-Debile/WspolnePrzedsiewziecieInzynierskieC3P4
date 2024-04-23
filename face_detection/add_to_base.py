@@ -39,7 +39,8 @@ for filename in os.listdir("./gotowe"):
     name = input("Podaj nazwe osoby: ")
     # Insert into the database
     cur = conn.cursor()
-    cur.execute("INSERT INTO pictures VALUES (DEFAULT,%s, %s)", (embedding_np.tolist(), name))
+    #up,down,left,right
+    cur.execute("INSERT INTO pictures VALUES (DEFAULT,%s, %s,DEFAULT,%s)", (embedding_np.tolist(), name, 'up'))
 
 # Commit the changes to the database
 conn.commit()

@@ -117,7 +117,7 @@ def get_names_list(prev_name_dict):
         end_time = time.time()  # Zakończ pomiar czasu
         execution_time = end_time - start_time
     #    print("Czas wykonania:", execution_time, "sekund")
-        #print(names_list)
+        print(names_list)
     return names_list
 
 
