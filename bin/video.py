@@ -76,7 +76,7 @@ def detect_from_video(video_path,model):
                 global heatmap_generation
                 heatmap_generation = not heatmap_generation
 
-            results = model.track(frame, persist=True, device=0, half=True, imgsz=(1920, 1088),
+            results = model.track(frame, persist=True, half=True, imgsz=(1920, 1088),
                                   augment=True, iou=0.2, max_det=10000)
             heatmap_frame = heatmap_obj.generate_heatmap(frame, results)
             for result in results:
