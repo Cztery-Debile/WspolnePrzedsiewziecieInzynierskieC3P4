@@ -19,7 +19,7 @@ def change_active_button(self,selection):
 
 def video_button_handler(method):
     if method == 'camera':
-        detect_from_video_zone("rtsp://localhost:8554/file?file=tokio.mkv",model_path)
+        detect_from_video("D:\pyprojekt\WspolnePrzedsiewziecieInzynierskieC3P4\\tests\\videos\pexels-timo-volz-5544073 (1080p).mp4",model_path)
     else:
         filepath = filedialog.askopenfilename(filetypes=[("Videos", "*.mp4;*.avi;*.mkv;*.mov")])
         detect_from_video(model_path, filepath)
@@ -30,7 +30,7 @@ customtkinter.set_default_color_theme("blue")  # Themes: "blue" (standard), "gre
 width = 1280
 height = 720
 title="NazwaRobocza™"
-model_path = "models/best_today.pt"
+model_path = "models/tokioKrakau5000.pt"
 
 class App(customtkinter.CTk):
     drawing_with_rectangle = False

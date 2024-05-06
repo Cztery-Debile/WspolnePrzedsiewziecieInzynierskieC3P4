@@ -71,12 +71,18 @@ def process_results(results, prev_name_dict):
                         embedded_image = np.array(ast.literal_eval(row[1]))
                         norm_distance = np.linalg.norm(embedded_image - embedding[0])
                         name = row[2]
-                        print(norm_distance)
+                        #print(norm_distance)
                         # Dodaj nowe imię i ID do listy
 
                         face_id = int(os.path.basename(file_path).split("_")[1].split(".")[0])
-                        if norm_distance < 1 and (face_id not in names_list or norm_distance < names_list[face_id][1]):
-                            names_list[face_id] = (name, norm_distance)
+                        if norm_distance < 0.9 and (face_id not in names_list or norm_distance < names_list[face_id][1]):
+                            if name in [name for name, _ in names_list.values()]:
+                                name_key = [key for key, value in names_list.items() if value[0] == row[2]]
+                                if(names_list[name_key[0]][1]>norm_distance):
+                                    del names_list[name_key[0]]
+                                    names_list[face_id] = (row[2], norm_distance)
+                            else:
+                                names_list[face_id] = (name, norm_distance)
 
                         # if norm_distance < 1:
                         #     # Sprawdź, czy na liście nie ma już tej samej nazwy
@@ -117,7 +123,7 @@ def get_names_list(prev_name_dict):
         end_time = time.time()  # Zakończ pomiar czasu
         execution_time = end_time - start_time
     #    print("Czas wykonania:", execution_time, "sekund")
-        print(names_list)
+        #print(names_list)
     return names_list
 
 

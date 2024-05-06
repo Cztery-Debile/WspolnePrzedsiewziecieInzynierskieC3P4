@@ -1,16 +1,16 @@
 import random
 from collections import defaultdict
 import torch
+import keyboard
 from ultralytics import YOLO
 import cv2
-
+from ultralytics.solutions import heatmap
 from bin.make_report import make_report
 
-
-def detect_from_video(model, video_path):
+heatmap_generation = False
+def detect_from_video(video_path,model):
     # load yolov8 model
     model = YOLO(model)
-
     cap = cv2.VideoCapture(video_path)
 
     center_dict = defaultdict(list)
@@ -56,15 +56,29 @@ def detect_from_video(model, video_path):
 
 
     ret = True
+    ret, frame = cap.read()
+    height, width, _ = frame.shape
+    heatmap_obj = heatmap.Heatmap()
+    heatmap_obj.set_args(
+                         imw=width,
+                         imh=height,
+                         view_img=False,
+                         shape="circle",
+                         classes_names=model.names)
     # read frames
     while ret:
         ret, frame = cap.read()
-
         if ret:
             # detect objects
             # track objects
 
-            results = model.track(frame, persist=True)
+            if keyboard.is_pressed('c'):
+                global heatmap_generation
+                heatmap_generation = not heatmap_generation
+
+            results = model.track(frame, persist=True, device=0, half=True, imgsz=(1920, 1088),
+                                  augment=True, iou=0.2, max_det=10000)
+            heatmap_frame = heatmap_obj.generate_heatmap(frame, results)
             for result in results:
                 if result.boxes is None or result.boxes.id is None:
                     resized_frame = cv2.resize(frame, (1140, 740))
@@ -74,10 +88,12 @@ def detect_from_video(model, video_path):
                     ids = result.boxes.id.cpu().numpy().astype(int)
 
                     class_ids = [int(box.cls[0]) for box in boxes]  # lista id potrzebna do liczenia
-                    all_detect_count = len(class_ids)
+                    all_detect_count_frame = len(class_ids)
 
-                    cv2.putText(frame, f'Count: {all_detect_count}', (10,50), cv2.FONT_HERSHEY_TRIPLEX, 2,
-                                (0, 255, 255), 3)
+                    cv2.putText(frame, f'Wykryto: {all_detect_count_frame}', (10,50), cv2.FONT_HERSHEY_TRIPLEX, 2,
+                                (0, 0, 0), 10)
+                    cv2.putText(frame, f'Wykryto: {all_detect_count_frame}', (10,50), cv2.FONT_HERSHEY_TRIPLEX, 2,
+                                (255, 255, 255), 3)
 
                     if len(class_ids) > all_detect_count:
                         all_detect_count = len(class_ids)
@@ -105,10 +121,13 @@ def detect_from_video(model, video_path):
                             cv2.rectangle(frame, r[:2], r[2:], color_dict[id], 2)  # rysowanie na obrazie boxa
                             cv2.putText(frame, f'Name: {id}', (r[0], r[1] - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0),
                                         2)
-                            cv2.imshow(f"Person {id}", frame[r[1]:r[3], r[0]:r[2]]) #to wyswietla boxy
+                            #cv2.imshow(f"Person {id}", frame[r[1]:r[3], r[0]:r[2]]) #to wyswietla boxy
 
+                if heatmap_generation:
+                    resized_frame = cv2.resize(heatmap_frame, (1140, 740))
+                else:
+                    resized_frame = cv2.resize(frame, (1140, 740))
 
-                resized_frame = cv2.resize(frame, (1140, 740))
                 cv2.imshow("act", resized_frame)
 
             if cv2.waitKey(1) & 0xFF == ord('q'):

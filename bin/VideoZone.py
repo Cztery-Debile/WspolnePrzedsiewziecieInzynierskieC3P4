@@ -171,14 +171,20 @@ def detect_from_video_zone(video_path, model):
                                 # jesli osoba byla w zonie i go opuściała oblicz czas i usun z listy
                                 if id in people_in_zone:
                                     time_spent_ms = current_time_ms - people_in_zone[id][1]  # Obliczenie czasu spędzonego
-                                    #print(f"{people_in_zone[id][0]}, {id} spędziła {time_spent_ms / 1000} sekund w obszarze.")
+                                    print(f"{people_in_zone[id][0]}, {id} spędziła {time_spent_ms / 1000} sekund w obszarze.")
 
                                     if id in person_time:
                                         if time_spent_ms / 1000 > 3:
+                                            print(f"{people_in_zone[id][0]} +1")
                                             # nie zmieniaj pierwszego imienia przypisanego do id, dodaj czas, dodaj ilość wykonania jesli więcej niz 3 sekundy
                                             person_time[id] = person_time[id][0], round(person_time[id][1] + (time_spent_ms / 1000), 2), person_time[id][2] + 1
+                                        else:
+                                            person_time[id] = person_time[id][0], round(person_time[id][1] + (time_spent_ms / 1000), 2), person_time[id][2]
                                     else:
-                                        person_time[id] = people_in_zone[id][0], round((time_spent_ms / 1000), 2), 0
+                                        if time_spent_ms / 1000 > 3:
+                                            person_time[id] = people_in_zone[id][0], round((time_spent_ms / 1000), 2), 1
+                                        else:
+                                            person_time[id] = people_in_zone[id][0], round((time_spent_ms / 1000), 2), 0
 
                                     del people_in_zone[id]  # Usunięcie osoby z obszaru
 
@@ -218,7 +224,7 @@ def detect_from_video_zone(video_path, model):
                     # Handle the situation where the ID is not found in the list of ids
                     print(f"ID {id} was not found in the list of ids. Skipping processing for this ID.")
 
-            cv2.imshow('Frame', frame)
+            cv2.imshow('act', frame)
 
             if frame_count % 60 == 0:
                 t2 = threading.Thread(target=compare)
@@ -233,9 +239,9 @@ def detect_from_video_zone(video_path, model):
 
 def compare():
     global names_list
-    print('stara list:', names_list)
+    #print('stara list:', names_list)
     names_list = get_names_list(names_list)
-    print('nowa lista:' , names_list)
+    #print('nowa lista:' , names_list)
 
 
 def delete_images():
