@@ -68,8 +68,14 @@ def detect_from_video(video_path,model, centered):
                 imgsz = (1920,1088)
             elif centered == "false":
                 imgsz = (1088,1920)
-            results = model.track(frame, persist=True, imgsz=imgsz,
-                                  augment=True, iou=0.01, max_det=10000)
+
+            if torch.cuda.is_available():
+                results = model.track(frame, persist=True, imgsz=imgsz,
+                                      augment=True, iou=0.01, max_det=10000, device=0)
+            else:
+                results = model.track(frame, persist=True)
+
+
             for result in results:
                 if result.boxes is None or result.boxes.id is None:
                     resized_frame = cv2.resize(frame, (1140, 740))

@@ -5,6 +5,7 @@ import os
 import random
 
 import numpy as np
+import torch.cuda
 from PIL import Image, ImageTk
 import cv2
 from pyexcel import merge_all_to_a_book
@@ -29,8 +30,14 @@ def photo_detect(image_path, model_path, selected_areas, process_whole_frame=Fal
             for x in range(0, frame.shape[1], 160):
                 fragment_coords_list.append((x, y))
                 fragment = frame[y:y + 160, x:x + 160]
-                results = model.predict(source=fragment, max_det=10000, half=True,
-                                        augment=True, iou=0.2, device=0, conf=0.55)
+
+                # jesli jest karta graficzna
+                if torch.cuda.is_available():
+                    results = model.predict(source=fragment, max_det=10000, half=True,
+                                            augment=True, iou=0.2, device=0, conf=0.55)
+                else:
+                    results = model.predict(source=fragment, conf=0.55, max_det=10000,
+                                            augment=True, iou=0.2)
 
                 for result in results:
                     boxes = result.boxes.cpu().numpy()
@@ -83,12 +90,22 @@ def photo_detect(image_path, model_path, selected_areas, process_whole_frame=Fal
                         # Store coordinates of the fragment
                         fragment_coords_list.append((x, y))
                         fragment = cropped_region[y:y + fragment_height, x:x + fragment_width]
-                        results = model.predict(source=fragment, max_det=10000, half=True,
-                                                augment=True, iou=0.2, device=0, conf=0.55)
+                        if torch.cuda.is_available():
+                            results = model.predict(source=fragment, max_det=10000, half=True,
+                                                    augment=True, iou=0.2, device=0, conf=0.55)
+                        else:
+                            results = model.predict(source=fragment, conf=0.55, max_det=10000,
+                                                    augment=True, iou=0.2)
+
                         all_results.extend([(i, fragment.shape[:2], result, (x, y), True) for result in results])
             else:
-                results = model.predict(source=cropped_region, max_det=10000, half=True,
-                                        augment=True, iou=0.2, device=0, conf=0.7)
+                if torch.cuda.is_available():
+                    results = model.predict(source=cropped_region, max_det=10000, half=True,
+                                            augment=True, iou=0.2, device=0, conf=0.7)
+                else:
+                    results = model.predict(source=cropped_region, conf=0.7, max_det=10000,
+                                            augment=True, iou=0.2)
+
                 fragment_coords_list.append((0, 0))
                 all_results.extend([(i, cropped_region.shape[:2], result, (0, 0), False) for result in results])
 

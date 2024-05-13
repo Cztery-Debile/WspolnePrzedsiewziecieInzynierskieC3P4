@@ -1,6 +1,8 @@
+import os
 from tkinter import *
 from tkinter import filedialog
 
+import torch.cuda
 from ultralytics import YOLO
 from ultralytics.solutions import heatmap
 import cv2
@@ -122,8 +124,12 @@ class App(customtkinter.CTk):
         assert cap.isOpened(), "Error reading video file"
         w, h, fps = (int(cap.get(x)) for x in (cv2.CAP_PROP_FRAME_WIDTH, cv2.CAP_PROP_FRAME_HEIGHT, cv2.CAP_PROP_FPS))
 
+        current_time = datetime.datetime.now()
+        formatted_time = current_time.strftime("%Y-%m-%d_%H-%M-%S")
+        os.makedirs('reports/heatmaps', exist_ok=True)
+
         # Video writer
-        video_writer = cv2.VideoWriter("heatmap_output.avi",
+        video_writer = cv2.VideoWriter(f"reports/heatmaps/h_output_{formatted_time}.avi",
                                        cv2.VideoWriter_fourcc(*'mp4v'),
                                        fps,
                                        (w, h))
@@ -145,8 +151,11 @@ class App(customtkinter.CTk):
                 print("Video frame is empty or video processing has been successfully completed.")
                 break
             imgsz = (1088, 1920)
-            tracks = model.track(im0, persist=True, imgsz=imgsz,
-                                  augment=True, iou=0.01, max_det=10000)
+            if torch.cuda.is_available():
+                tracks = model.track(im0, persist=True, imgsz=imgsz,
+                                      augment=True, iou=0.01, max_det=10000)
+            else:
+                tracks = model.track(im0, persist=True)
 
             im0 = heatmap_obj.generate_heatmap(im0, tracks)
             video_writer.write(im0)

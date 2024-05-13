@@ -6,6 +6,7 @@ import threading
 from collections import defaultdict
 import cv2
 import numpy as np
+import torch
 from pyexcel.cookbook import merge_all_to_a_book
 import glob
 from ultralytics import YOLO
@@ -83,7 +84,11 @@ def detect_from_video_zone(video_path, model):
 
             cv2.rectangle(frame, (specified_region[0], specified_region[1]), (specified_region[2], specified_region[3]), (0, 255, 0), 2)
 
-            results = model_yolo.track(frame, persist=True, verbose=False, device=0, stream=True, half=True)
+            if torch.cuda.is_available():
+                results = model_yolo.track(frame, persist=True, verbose=False, device=0, stream=True, half=True)
+            else:
+                results = model_yolo.track(frame, persist=True, verbose=False, stream=True)
+
 
             current_time_ms = cap.get(cv2.CAP_PROP_POS_MSEC)
 

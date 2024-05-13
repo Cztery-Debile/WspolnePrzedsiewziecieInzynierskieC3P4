@@ -2,6 +2,7 @@ import datetime
 import os
 import random
 import numpy as np
+import torch
 from PIL import Image, ImageTk
 import cv2
 from ultralytics import YOLO
@@ -16,8 +17,14 @@ def photo_detect_all(image_path, model_path, width=0, height=0):
     model = YOLO(model_path)
     frame = cv2.imread(image_path)
     all_detect_count = 0
-    results = model.predict(source=frame, max_det=10000,half=True,
-                                  augment=True, iou=0.2, device=0)
+
+    if torch.cuda.is_available():
+        results = model.predict(source=frame, max_det=10000, half=True,
+                                augment=True, iou=0.2, device=0)
+    else:
+        results = model.predict(source=frame, conf=0.55, max_det=10000,
+                                augment=True, iou=0.2)
+
     for result in results:
         boxes = result.boxes.cpu().numpy()
         color = random_color()
