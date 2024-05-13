@@ -12,16 +12,13 @@ from bin.make_report import make_report
 def random_color():
     return tuple(int(random.random() * 255) for _ in range(3))
 
-def photo_detect(image_path, model_path):
+def photo_detect_all(image_path, model_path, width=0, height=0):
     model = YOLO(model_path)
     frame = cv2.imread(image_path)
     all_detect_count = 0
-
-    results = model.predict(source=frame, conf=0.7, max_det=10000)
-    all_results = [(0, frame.shape[:2], result, (0, 0), False) for result in results]
-
-    for result_info in all_results:
-        area_index, area_size, result, fragment_coords, check_for_fragments = result_info
+    results = model.predict(source=frame, max_det=10000,half=True,
+                                  augment=True, iou=0.2, device=0)
+    for result in results:
         boxes = result.boxes.cpu().numpy()
         color = random_color()
 
@@ -29,15 +26,10 @@ def photo_detect(image_path, model_path):
             class_id = int(box.cls[0])
             confidence = box.conf.astype(float)
 
-            if class_id == 0 or class_id==2:  # Person
+            if class_id == 0:  # Person
                 r = box.xyxy[0].astype(int)
                 x1, y1, x2, y2 = r
-
-                class_name = model.names[class_id]
                 cv2.rectangle(frame, (x1, y1), (x2, y2), color, 2)
-                # cv2.putText(frame, f'Name: {class_name}', (x1, y1 - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
-                # cv2.putText(frame, f'Confidence: {confidence}', (x1, y1), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 0, 0), 2)
-
                 all_detect_count += 1
 
     # Resize the frame for display (optional)
@@ -47,7 +39,8 @@ def photo_detect(image_path, model_path):
 
     # Convert the frame to PIL Image
     pil_image = Image.fromarray(frame_rgb)
-
+    # if height > 0 and width > 0:
+    #     pil_image = pil_image.resize((width,height))
     # Convert PIL Image to Tkinter compatible format
     tk_image = ImageTk.PhotoImage(pil_image)
 

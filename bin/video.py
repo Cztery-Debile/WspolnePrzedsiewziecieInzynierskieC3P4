@@ -8,7 +8,7 @@ from ultralytics.solutions import heatmap
 from bin.make_report import make_report
 
 heatmap_generation = False
-def detect_from_video(video_path,model):
+def detect_from_video(video_path,model, centered):
     # load yolov8 model
     model = YOLO(model)
     cap = cv2.VideoCapture(video_path)
@@ -58,27 +58,18 @@ def detect_from_video(video_path,model):
     ret = True
     ret, frame = cap.read()
     height, width, _ = frame.shape
-    heatmap_obj = heatmap.Heatmap()
-    heatmap_obj.set_args(
-                         imw=width,
-                         imh=height,
-                         view_img=False,
-                         shape="circle",
-                         classes_names=model.names)
     # read frames
     while ret:
         ret, frame = cap.read()
         if ret:
             # detect objects
             # track objects
-
-            if keyboard.is_pressed('c'):
-                global heatmap_generation
-                heatmap_generation = not heatmap_generation
-
-            results = model.track(frame, persist=True, half=True, imgsz=(1920, 1088),
-                                  augment=True, iou=0.2, max_det=10000)
-            heatmap_frame = heatmap_obj.generate_heatmap(frame, results)
+            if centered == "true":
+                imgsz = (1920,1088)
+            elif centered == "false":
+                imgsz = (1088,1920)
+            results = model.track(frame, persist=True, imgsz=imgsz,
+                                  augment=True, iou=0.01, max_det=10000)
             for result in results:
                 if result.boxes is None or result.boxes.id is None:
                     resized_frame = cv2.resize(frame, (1140, 740))
@@ -114,7 +105,7 @@ def detect_from_video(video_path,model):
 
 
 
-                        if class_id == 2:  # person
+                        if class_id == 3:  # person
                             r = box.xyxy[0].astype(int)
                             draw_lines(r, id, frame)  # rysowanie lini
                             class_name = model.names[class_id]
@@ -123,10 +114,7 @@ def detect_from_video(video_path,model):
                                         2)
                             #cv2.imshow(f"Person {id}", frame[r[1]:r[3], r[0]:r[2]]) #to wyswietla boxy
 
-                if heatmap_generation:
-                    resized_frame = cv2.resize(heatmap_frame, (1140, 740))
-                else:
-                    resized_frame = cv2.resize(frame, (1140, 740))
+                resized_frame = cv2.resize(frame, (1140, 740))
 
                 cv2.imshow("act", resized_frame)
 

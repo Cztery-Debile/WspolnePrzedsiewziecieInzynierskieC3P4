@@ -83,7 +83,7 @@ def detect_from_video_zone(video_path, model):
 
             cv2.rectangle(frame, (specified_region[0], specified_region[1]), (specified_region[2], specified_region[3]), (0, 255, 0), 2)
 
-            results = model_yolo.track(frame, persist=True, verbose=False)
+            results = model_yolo.track(frame, persist=True, verbose=False, device=0, stream=True, half=True)
 
             current_time_ms = cap.get(cv2.CAP_PROP_POS_MSEC)
 

@@ -17,7 +17,7 @@ def random_color():
     return tuple(int(random.random() * 255) for _ in range(3))
 
 
-def photo_detect(image_path, model_path, selected_areas, process_whole_frame=False):
+def photo_detect(image_path, model_path, selected_areas, process_whole_frame=False, width=0, height=0):
     model = YOLO(model_path)
     frame = cv2.imread(image_path)
     all_results = [] # lista zawierająca wszystkie wyniki detekcji
@@ -29,8 +29,8 @@ def photo_detect(image_path, model_path, selected_areas, process_whole_frame=Fal
             for x in range(0, frame.shape[1], 160):
                 fragment_coords_list.append((x, y))
                 fragment = frame[y:y + 160, x:x + 160]
-
-                results = model.predict(source=fragment, conf=0.55, max_det=10000)
+                results = model.predict(source=fragment, max_det=10000, half=True,
+                                        augment=True, iou=0.2, device=0, conf=0.55)
 
                 for result in results:
                     boxes = result.boxes.cpu().numpy()
@@ -83,10 +83,12 @@ def photo_detect(image_path, model_path, selected_areas, process_whole_frame=Fal
                         # Store coordinates of the fragment
                         fragment_coords_list.append((x, y))
                         fragment = cropped_region[y:y + fragment_height, x:x + fragment_width]
-                        results = model.predict(source=fragment, conf=0.55, max_det=10000)
+                        results = model.predict(source=fragment, max_det=10000, half=True,
+                                                augment=True, iou=0.2, device=0, conf=0.55)
                         all_results.extend([(i, fragment.shape[:2], result, (x, y), True) for result in results])
             else:
-                results = model.predict(source=cropped_region, conf=0.7, max_det=10000)
+                results = model.predict(source=cropped_region, max_det=10000, half=True,
+                                        augment=True, iou=0.2, device=0, conf=0.7)
                 fragment_coords_list.append((0, 0))
                 all_results.extend([(i, cropped_region.shape[:2], result, (0, 0), False) for result in results])
 
@@ -142,6 +144,8 @@ def photo_detect(image_path, model_path, selected_areas, process_whole_frame=Fal
 
     # Convert the frame to PIL Image
     pil_image = Image.fromarray(frame_rgb)
+    # if height > 0 and width > 0:
+    #     pil_image = pil_image.resize((width,height))
 
     # Convert PIL Image to Tkinter compatible format
     tk_image = ImageTk.PhotoImage(pil_image)

@@ -5,8 +5,8 @@ import os
 
 os.environ["KMP_DUPLICATE_LIB_OK"]="TRUE"
 
-model = YOLO("yolov8n.pt")
-cap = cv2.VideoCapture('../tests/videos/people-walking.mp4')
+model = YOLO("../models/tokioKrakau5000.pt")
+cap = cv2.VideoCapture('./krakau2.mkv')
 w, h, fps = (int(cap.get(x)) for x in (cv2.CAP_PROP_FRAME_WIDTH, cv2.CAP_PROP_FRAME_HEIGHT, cv2.CAP_PROP_FPS))
 if not cap.isOpened():
     print("Error opening video stream or file")
