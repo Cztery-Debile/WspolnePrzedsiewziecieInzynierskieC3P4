@@ -25,6 +25,7 @@ def photo_detect(image_path, model_path, selected_areas, process_whole_frame=Fal
     fragment_coords_list = [] # lista zawierająca współrzędne danych obszarów
     all_detect_count = 0 # liczba wszystkich wykrytych obiektów
     detected_objects = {}
+
     if process_whole_frame:
         for y in range(0, frame.shape[0], 160):
             for x in range(0, frame.shape[1], 160):
@@ -164,6 +165,8 @@ def photo_detect(image_path, model_path, selected_areas, process_whole_frame=Fal
     # if height > 0 and width > 0:
     #     pil_image = pil_image.resize((width,height))
 
+    frame_resized=cv2.resize(frame,(1140,740))
+    cv2.imshow("act",frame_resized)
     # Convert PIL Image to Tkinter compatible format
     tk_image = ImageTk.PhotoImage(pil_image)
 

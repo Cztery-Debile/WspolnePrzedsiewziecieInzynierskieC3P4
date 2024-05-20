@@ -16,14 +16,15 @@ def random_color():
 def photo_detect_all(image_path, model_path, width=0, height=0):
     model = YOLO(model_path)
     frame = cv2.imread(image_path)
+    sizes = (frame.shape[0], frame.shape[1])
     all_detect_count = 0
 
     if torch.cuda.is_available():
         results = model.predict(source=frame, max_det=10000, half=True,
-                                augment=True, iou=0.2, device=0)
+                                augment=True, iou=0.2, device=0, imgsz=sizes)
     else:
         results = model.predict(source=frame, conf=0.55, max_det=10000,
-                                augment=True, iou=0.2)
+                                augment=True, iou=0.2, imgsz=sizes)
 
     for result in results:
         boxes = result.boxes.cpu().numpy()
@@ -50,7 +51,8 @@ def photo_detect_all(image_path, model_path, width=0, height=0):
     #     pil_image = pil_image.resize((width,height))
     # Convert PIL Image to Tkinter compatible format
     tk_image = ImageTk.PhotoImage(pil_image)
-
+    frame_resized=cv2.resize(frame,(1920,1080))
+    cv2.imshow("act",frame_resized)
     # tworzenie raportu
     make_report(None, image_path, all_detect_count, False)
 

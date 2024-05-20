@@ -71,7 +71,7 @@ def detect_from_video(video_path,model, centered):
 
             if torch.cuda.is_available():
                 results = model.track(frame, persist=True, imgsz=imgsz,
-                                      augment=True, iou=0.01, max_det=10000, device=0)
+                                      augment=True, iou=0.1, max_det=10000, device=0, half=True)
             else:
                 results = model.track(frame, persist=True)
 

@@ -47,7 +47,7 @@ def video_button_handler(method,place=""):
         model = "models/best_today.pt"
         detect_from_video_zone("rtsp://localhost:8554/file?file=ProjektMBox.mkv", model)
     else:
-        model = "models/tokioKrakau5000.pt"
+        model = "models/tokioKrakau6000.pt"
         try:
             filepath =filedialog.askopenfilename(filetypes=[("Videos", "*.mp4;*.avi;*.mkv;*.mov")])
         except:
@@ -57,7 +57,7 @@ def video_button_handler(method,place=""):
             toplevel_window.attributes('-topmost', 'true')
             toplevel_window.wait_window()
             if(not heatmap_choice):
-                detect_from_video(filepath, model, centered="false")
+                detect_from_video(filepath, model, centered="true")
             else:
                 App.generate_heatmap(app,filepath,model)
 customtkinter.set_appearance_mode("Dark")  # Modes: "System" (standard), "Dark", "Light"
@@ -140,8 +140,10 @@ class App(customtkinter.CTk):
                              imw=w,
                              imh=h,
                              shape="circle",
+                             heatmap_alpha=0.6,
                              classes_names=model.names,
-                             decay_factor=1)
+                             decay_factor=1,
+                             view_img=False)
 
         while cap.isOpened():
             start=time.time()

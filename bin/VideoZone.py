@@ -85,7 +85,7 @@ def detect_from_video_zone(video_path, model):
             cv2.rectangle(frame, (specified_region[0], specified_region[1]), (specified_region[2], specified_region[3]), (0, 255, 0), 2)
 
             if torch.cuda.is_available():
-                results = model_yolo.track(frame, persist=True, verbose=False, device=0, stream=True, half=True)
+                results = model_yolo.track(frame, persist=True, device=0, stream=True, half=True)
             else:
                 results = model_yolo.track(frame, persist=True, verbose=False, stream=True)
 
@@ -176,20 +176,20 @@ def detect_from_video_zone(video_path, model):
                                 # jesli osoba byla w zonie i go opuściała oblicz czas i usun z listy
                                 if id in people_in_zone:
                                     time_spent_ms = current_time_ms - people_in_zone[id][1]  # Obliczenie czasu spędzonego
-                                    print(f"{people_in_zone[id][0]}, {id} spędziła {time_spent_ms / 1000} sekund w obszarze.")
+                                    name = people_in_zone[id][0]
 
-                                    if id in person_time:
+                                    if name in person_time:
                                         if time_spent_ms / 1000 > 3:
-                                            print(f"{people_in_zone[id][0]} +1")
                                             # nie zmieniaj pierwszego imienia przypisanego do id, dodaj czas, dodaj ilość wykonania jesli więcej niz 3 sekundy
-                                            person_time[id] = person_time[id][0], round(person_time[id][1] + (time_spent_ms / 1000), 2), person_time[id][2] + 1
+                                            person_time[name] = round(person_time[name][0] + (time_spent_ms / 1000), 2), person_time[name][1] + 1
+
                                         else:
-                                            person_time[id] = person_time[id][0], round(person_time[id][1] + (time_spent_ms / 1000), 2), person_time[id][2]
+                                            person_time[name] = round(person_time[name][0] + (time_spent_ms / 1000), 2), person_time[name][1]
                                     else:
                                         if time_spent_ms / 1000 > 3:
-                                            person_time[id] = people_in_zone[id][0], round((time_spent_ms / 1000), 2), 1
+                                            person_time[name] = round((time_spent_ms / 1000), 2), 1
                                         else:
-                                            person_time[id] = people_in_zone[id][0], round((time_spent_ms / 1000), 2), 0
+                                            person_time[name] = round((time_spent_ms / 1000), 2), 0
 
                                     del people_in_zone[id]  # Usunięcie osoby z obszaru
 
@@ -224,10 +224,12 @@ def detect_from_video_zone(video_path, model):
                         #             )
 
                     else:
-                        print(f"No box found for ID {id}. Skipping processing for this ID.")
+                        pass
+                    #print(f"No box found for ID {id}. Skipping processing for this ID.")
                 except ValueError as e:
+                    pass
                     # Handle the situation where the ID is not found in the list of ids
-                    print(f"ID {id} was not found in the list of ids. Skipping processing for this ID.")
+                    #print(f"ID {id} was not found in the list of ids. Skipping processing for this ID.")
 
             cv2.imshow('act', frame)
 
