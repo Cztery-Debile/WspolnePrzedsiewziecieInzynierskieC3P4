@@ -38,16 +38,16 @@ def change_active_button(self,selection):
 def video_button_handler(method,place=""):
     if method == 'camera':
         if place == "krakau":
-            model = "models/tokioKrakau6000.pt"
+            model = "models/tokioKrakow6000.pt"
             detect_from_video("rtsp://localhost:8554/file?file=krakauStragan.mkv",model, centered="false")
         elif place == "tokio":
-            model = "models/tokioKrakau5000.pt"
+            model = "models/tokioKrakow5000.pt"
             detect_from_video("rtsp://localhost:8554/file?file=tokio.mkv",model,centered="true")
     elif method == "faces":
-        model = "models/best_today.pt"
+        model = "models/first_own_dataset.pt"
         detect_from_video_zone("rtsp://localhost:8554/file?file=ProjektMBox.mkv", model)
     else:
-        model = "models/tokioKrakau6000.pt"
+        model = "models/tokioKrakow6000.pt"
         try:
             filepath =filedialog.askopenfilename(filetypes=[("Videos", "*.mp4;*.avi;*.mkv;*.mov")])
         except:
@@ -66,9 +66,10 @@ customtkinter.set_default_color_theme("blue")  # Themes: "blue" (standard), "gre
 width = 1280
 height = 720
 title="NazwaRobocza™"
-model_path = "models/tokioKrakau5.pt"
+model_path = "models/tokioKrakow5.pt"
 heatmap_choice = False
-
+canvas_width=0
+canvas_height=0
 
 class ToplevelWindow(customtkinter.CTkToplevel):
     def generate_heatmap(self):
@@ -274,9 +275,8 @@ class App(customtkinter.CTk):
         self.bind_selection(self.select_area,self.select_area,self.select_area)
         change_active_button(self,"polyline")
     def analyze_photos(self,image_path,selected_areas=[],process_whole_frame=False,fragments=False):
-        model = "models/28_best.pt"
-        canvas_width = self.canvas.winfo_width()
-        canvas_height = self.canvas.winfo_height()
+        model = "models/16gb_dataset_28e.pt"
+        global canvas_width, canvas_height
         # process whole frame -> photodetect all
         # not process whole frame ->
         if fragments:
@@ -352,10 +352,13 @@ class App(customtkinter.CTk):
             return
         self.drawing_method_frame.grid(row=5, column=0, rowspan=3, sticky="n")
         sidebar_frame_width=self.sidebar_frame.cget("width")
-        remaining_width=self.winfo_width()-sidebar_frame_width
+        remaining_width = self.winfo_width()-sidebar_frame_width
         actual_height = self.winfo_height()
+        global canvas_width, canvas_height
+        canvas_width = remaining_width
+        canvas_height = actual_height
         self.image = Image.open(self.filepath)
-        #self.image = self.image.resize((remaining_width, actual_height))
+        self.image = self.image.resize((remaining_width, actual_height))
         self.draw = ImageDraw.Draw(self.image)
         self.photo = ImageTk.PhotoImage(image=self.image)
         self.canvas = Canvas(self)

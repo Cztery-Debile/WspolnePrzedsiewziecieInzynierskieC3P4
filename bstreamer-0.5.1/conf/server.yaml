@@ -1,0 +1,33 @@
+network:
+  bind: ["0.0.0.0:8554"]
+  sndbuf: 131072
+  threads: 1
+  watermarks:
+    high: 131072
+    low: 65536
+  limits:
+#    packets: 10
+#    size: 131072
+    time: 200
+streaming:
+  file:
+    class: Filesystem
+    conf:
+      repeat: true
+      max_rtp_size: 65536
+      # path to video folder (/opt/video_samples for example)
+      basedir: video
+      file: ProjektM-Trim.mp4
+  picture:
+    class: Generated
+    conf:
+      max_rtp_size: 65536
+      picture:
+        width: 640
+        height: 480
+      encoder:
+        profile: "baseline"
+        bitrate: 400000
+        fps: 25
+        gop_size: 10
+        max_b_frames: 1

@@ -26,6 +26,9 @@ def photo_detect(image_path, model_path, selected_areas, process_whole_frame=Fal
     all_detect_count = 0 # liczba wszystkich wykrytych obiektów
     detected_objects = {}
 
+    frame_resized = cv2.resize(frame, (width, height))
+    height_ratio = float(height / frame.shape[0])
+    width_ratio = float(width / frame.shape[1])
     if process_whole_frame:
         for y in range(0, frame.shape[0], 160):
             for x in range(0, frame.shape[1], 160):
@@ -37,7 +40,7 @@ def photo_detect(image_path, model_path, selected_areas, process_whole_frame=Fal
                     results = model.predict(source=fragment, max_det=10000, half=True,
                                             augment=True, iou=0.2, device=0, conf=0.55)
                 else:
-                    results = model.predict(source=fragment, conf=0.55, max_det=10000,
+                    results = model.predict(source=fragment, max_det=10000,
                                             augment=True, iou=0.2)
 
                 for result in results:
@@ -52,15 +55,15 @@ def photo_detect(image_path, model_path, selected_areas, process_whole_frame=Fal
                             r = box.xyxy[0].astype(int)
                             x1, y1, x2, y2 = r
 
-                            x1 += x  # Adjust x1
-                            x2 += x  # Adjust x2
-                            y1 += y  # Adjust y1
-                            y2 += y  # Adjust y2
+                            x1 = int((x1 + x) * width_ratio)
+                            x2 = int((x2 + x) * width_ratio)
+                            y1 = int((y1 + y) * height_ratio)
+                            y2 = int((y2 + y) * height_ratio)
 
                             # Check if this object has already been detected
                             if (x1, y1, x2, y2) not in detected_objects.values():
                                 class_name = model.names[class_id]
-                                cv2.rectangle(frame, (x1, y1), (x2, y2), color, 2)
+                                cv2.rectangle(frame_resized, (x1, y1), (x2, y2), color, 2)
                                 # cv2.putText(frame, f'Name: {class_name}', (x1, y1 - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
                                 # cv2.putText(frame, f'Confidence: {confidence}', (x1, y1), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 0, 0), 2)
 
@@ -102,9 +105,9 @@ def photo_detect(image_path, model_path, selected_areas, process_whole_frame=Fal
             else:
                 if torch.cuda.is_available():
                     results = model.predict(source=cropped_region, max_det=10000, half=True,
-                                            augment=True, iou=0.2, device=0, conf=0.7)
+                                            augment=True, iou=0.2, device=0)
                 else:
-                    results = model.predict(source=cropped_region, conf=0.7, max_det=10000,
+                    results = model.predict(source=cropped_region, max_det=10000,
                                             augment=True, iou=0.2)
 
                 fragment_coords_list.append((0, 0))
@@ -124,49 +127,94 @@ def photo_detect(image_path, model_path, selected_areas, process_whole_frame=Fal
                     if class_id == 0:  # Person
                         r = box.xyxy[0].astype(int)
                         x1, y1, x2, y2 = r
+
+                        x1 = int(x1 * width_ratio)
+                        x2 = int(x2 * width_ratio)
+                        y1 = int(y1 * height_ratio)
+                        y2 = int(y2 * height_ratio)
+
                         if result_info[4]:
-                            if type(selected_areas[i][1]) == tuple:
-                                x1 = x1 + fragment_coords[0] + (selected_areas[i][0][0] - min(selected_areas[i][0][0], selected_areas[i][1][0]))
-                                x2 = x2 + fragment_coords[0] + (selected_areas[i][1][0] - min(selected_areas[i][0][0], selected_areas[i][1][0]))
-                                y1 = y1 + fragment_coords[1] + (selected_areas[i][0][1] - min(selected_areas[i][0][1], selected_areas[i][1][1]))
-                                y2 = y2 + fragment_coords[1] + (selected_areas[i][1][1] - min(selected_areas[i][0][1], selected_areas[i][1][1]))
+                            if type(selected_areas[area_index][1]) == tuple:
+                                print("1")
+                                x1 = x1 + int(fragment_coords[0] * width_ratio) + (
+                                    int(selected_areas[area_index][0][0] * width_ratio)
+                                    - min(int(selected_areas[area_index][0][0] * width_ratio),
+                                          int(selected_areas[area_index][1][0] * width_ratio)))
+                                x2 = x2 + int(fragment_coords[0] * width_ratio) + (
+                                    int(selected_areas[area_index][1][0] * width_ratio)
+                                    - min(int(selected_areas[area_index][0][0] * width_ratio),
+                                          int(selected_areas[area_index][1][0] * width_ratio)))
+                                y1 = y1 + int(fragment_coords[1] * height_ratio) + (
+                                    int(selected_areas[area_index][0][1] * height_ratio)
+                                    - min(int(selected_areas[area_index][0][1] * height_ratio),
+                                          int(selected_areas[area_index][1][1] * height_ratio)))
+                                y2 = y2 + int(fragment_coords[1] * height_ratio) + (
+                                    int(selected_areas[area_index][1][1] * height_ratio)
+                                    - min(int(selected_areas[area_index][0][1] * height_ratio),
+                                          int(selected_areas[area_index][1][1] * height_ratio)))
                             else:
-                                x1 = x1 + fragment_coords[0] + min(selected_areas[i][0], selected_areas[i][2])
-                                x2 = x2 + fragment_coords[0] + min(selected_areas[i][0], selected_areas[i][2])
-                                y1 = y1 + fragment_coords[1] + min(selected_areas[i][1], selected_areas[i][3])
-                                y2 = y2 + fragment_coords[1] + min(selected_areas[i][1], selected_areas[i][3])
+                                print("2")
+                                x1 = x1 + int(fragment_coords[0] * width_ratio) + min(
+                                    int(selected_areas[area_index][0] * width_ratio),
+                                    int(selected_areas[area_index][2] * width_ratio))
+                                x2 = x2 + int(fragment_coords[0] * width_ratio) + min(
+                                    int(selected_areas[area_index][0] * width_ratio),
+                                    int(selected_areas[area_index][2] * width_ratio))
+                                y1 = y1 + int(fragment_coords[1] * height_ratio) + min(
+                                    int(selected_areas[area_index][1] * height_ratio),
+                                    int(selected_areas[area_index][3] * height_ratio))
+                                y2 = y2 + int(fragment_coords[1] * height_ratio) + min(
+                                    int(selected_areas[area_index][1] * height_ratio),
+                                    int(selected_areas[area_index][3] * height_ratio))
                         else:
-                            if type(selected_areas[i][1]) == tuple:
-                                x1 += selected_areas[i][0][0] - min(selected_areas[i][0][0], selected_areas[i][1][0])  # Adjust x1
-                                x2 += selected_areas[i][1][0] - min(selected_areas[i][0][0], selected_areas[i][1][0])  # Adjust x2
-                                y1 += selected_areas[i][0][1] - min(selected_areas[i][0][1], selected_areas[i][1][1])  # Adjust y1
-                                y2 += selected_areas[i][1][1] - min(selected_areas[i][0][1], selected_areas[i][1][1])  # Adjust y2
+                            if type(selected_areas[area_index][1]) == tuple:
+                                print("3")
+                                x1 += int(selected_areas[area_index][0][0] * width_ratio) - min(
+                                    int(selected_areas[area_index][0][0] * width_ratio),
+                                    int(selected_areas[area_index][1][0] * width_ratio))
+                                x2 += int(selected_areas[area_index][1][0] * width_ratio) - min(
+                                    int(selected_areas[area_index][0][0] * width_ratio),
+                                    int(selected_areas[area_index][1][0] * width_ratio))
+                                y1 += int(selected_areas[area_index][0][1] * height_ratio) - min(
+                                    int(selected_areas[area_index][0][1] * height_ratio),
+                                    int(selected_areas[area_index][1][1] * height_ratio))
+                                y2 += int(selected_areas[area_index][1][1] * height_ratio) - min(
+                                    int(selected_areas[area_index][0][1] * height_ratio),
+                                    int(selected_areas[area_index][1][1] * height_ratio))
                             else:
-                                x1 += min(selected_areas[i][0], selected_areas[i][2])
-                                x2 += min(selected_areas[i][0], selected_areas[i][2])
-                                y1 += min(selected_areas[i][1], selected_areas[i][3])
-                                y2 += min(selected_areas[i][1], selected_areas[i][3])
+                                print("4")
+                                x1 += min(int(selected_areas[area_index][0] * width_ratio),
+                                          int(selected_areas[area_index][2] * width_ratio))
+                                x2 += min(int(selected_areas[area_index][0] * width_ratio),
+                                          int(selected_areas[area_index][2] * width_ratio))
+                                y1 += min(int(selected_areas[area_index][1] * height_ratio),
+                                          int(selected_areas[area_index][3] * height_ratio))
+                                y2 += min(int(selected_areas[area_index][1] * height_ratio),
+                                          int(selected_areas[area_index][3] * height_ratio))
+
+                        # Apply the resizing factors
+                        x1 = int(x1)
+                        x2 = int(x2)
+                        y1 = int(y1)
+                        y2 = int(y2)
 
                         class_name = model.names[class_id]
-                        cv2.rectangle(frame, (x1, y1), (x2, y2), color, 2)
+                        cv2.rectangle(frame_resized, (x1, y1), (x2, y2), color, 2)
+                        # cv2.rectangle(frame_resized, (x1, y1), (x2, y2), color, 2)
                         # cv2.putText(frame, f'Name: {class_name}', (x1, y1 - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0),
                         #             2)
                         # cv2.putText(frame, f'Confidence: {confidence}', (x1, y1), cv2.FONT_HERSHEY_SIMPLEX, 0.5,
                         #             (255, 0, 0), 2)
 
-    # Resize the frame for display (optional)
-
 
     # Convert the frame to RGB format
-    frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+    frame_rgb = cv2.cvtColor(frame_resized, cv2.COLOR_BGR2RGB)
 
     # Convert the frame to PIL Image
     pil_image = Image.fromarray(frame_rgb)
     # if height > 0 and width > 0:
     #     pil_image = pil_image.resize((width,height))
 
-    frame_resized=cv2.resize(frame,(1140,740))
-    cv2.imshow("act",frame_resized)
     # Convert PIL Image to Tkinter compatible format
     tk_image = ImageTk.PhotoImage(pil_image)
 

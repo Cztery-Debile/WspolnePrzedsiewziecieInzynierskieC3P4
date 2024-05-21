@@ -1,0 +1,4 @@
+[ZoneTransfer]
+ZoneId=3
+ReferrerUrl=https://cloudconvert.com/
+HostUrl=https://cloudconvert-files.s3.eu-central-1.amazonaws.com/8b1f845c-745e-4048-b234-71d1bf7ee70b/2024-05-13-14-00-47-trim_lQUuGBQ5.mkv?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Content-Sha256=UNSIGNED-PAYLOAD&X-Amz-Credential=AKIAI2WCZ54772T33JEQ%2F20240513%2Feu-central-1%2Fs3%2Faws4_request&X-Amz-Date=20240513T124152Z&X-Amz-Expires=86400&X-Amz-Signature=84869a6434d395ca88a991475ef9e72241f39f768a613cac2a79de2d52c93b3f&X-Amz-SignedHeaders=host&response-content-disposition=attachment%3B%20filename%3D%222024-05-13-14-00-47-trim_lQUuGBQ5.mkv%22&response-content-type=video%2Fx-matroska&x-id=GetObject
