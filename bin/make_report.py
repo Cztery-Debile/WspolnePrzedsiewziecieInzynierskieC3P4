@@ -33,10 +33,11 @@ def generate_report_video(person_time, output_file, video_path, all_detect_count
             for person_name, (total_time, num_tasks) in person_time.items():
                 writer.writerow({'Osoba': person_name, 'Całkowity czas (s)': total_time, 'Ilość wykonanych rzeczy': num_tasks})
         else:
-            fieldnames = ['Nazwa Pliku', 'Największa ilość wykrytych osób']
+            fieldnames = ['Czas', 'Największa ilość wykrytych osób']
             writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
             writer.writeheader()
-            writer.writerow({'Nazwa Pliku': video_path, 'Największa ilość wykrytych osób': all_detect_count})
+            for time_interval, max_detect_count in all_detect_count:
+                writer.writerow({'Czas': time_interval, 'Największa ilość wykrytych osób': max_detect_count})
 
     merge_all_to_a_book(glob.glob(output_file), f"{output_file.rstrip('.csv')}.xlsx")
     os.startfile(output_file.rstrip(".csv")+".xlsx")

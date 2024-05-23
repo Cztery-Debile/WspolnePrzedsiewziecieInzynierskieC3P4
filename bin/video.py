@@ -1,5 +1,7 @@
 import random
 from collections import defaultdict
+from datetime import datetime, timedelta
+
 import torch
 import keyboard
 from ultralytics import YOLO
@@ -17,8 +19,12 @@ def detect_from_video(video_path,model, centered):
     object_id_list = []
     color_dict = {}
     max_points = 50  # maksymalna liczba punktów śledzenia
-    all_detect_count = 0
 
+    #count people
+    all_detect_count = 0
+    max_count_interval = 0
+    interval_start_time = datetime.now()  # initial sys time
+    interval_counts = []  # list to store time : max detect count
 
     def random_color():
         return tuple(int(random.random() * 255) for _ in range(3))
@@ -75,8 +81,15 @@ def detect_from_video(video_path,model, centered):
             else:
                 results = model.track(frame, persist=True)
 
-
             for result in results:
+                current_time = datetime.now()
+
+                if (current_time - interval_start_time) >= timedelta(minutes=30):
+                    interval_counts.append((interval_start_time.strftime('%H:%M'), max_count_interval))
+
+                    max_count_interval = 0  # reset interval count
+                    interval_start_time = current_time  # set current time
+
                 if result.boxes is None or result.boxes.id is None:
                     resized_frame = cv2.resize(frame, (1140, 740))
                     cv2.imshow("act", resized_frame)
@@ -94,6 +107,9 @@ def detect_from_video(video_path,model, centered):
 
                     if len(class_ids) > all_detect_count:
                         all_detect_count = len(class_ids)
+
+                    if len(class_ids) > max_count_interval:
+                        max_count_interval = len(class_ids)
 
                     for box, id in zip(boxes, ids):
                         class_id = int(box.cls[0])  # klasa boxa
@@ -125,5 +141,5 @@ def detect_from_video(video_path,model, centered):
                 cv2.imshow("act", resized_frame)
 
             if cv2.waitKey(1) & 0xFF == ord('q'):
-                make_report(None, video_path, all_detect_count, True)
+                make_report(None, video_path, interval_counts, True)
                 break
